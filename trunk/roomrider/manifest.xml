@@ -1,0 +1,26 @@
+<package>
+  <description brief="Driver for the Roomrider platform">
+
+     The Roomrider is iRobot Roomba 500 equipped with A Sick S3000 Laserscanner and 
+     a notebook. This package contains the drivers needed to work with the ROS middleware.
+
+  </description>
+  <author>Andreas Hochrath, Torsten Fiolka</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://code.google.com/p/ais-bonn-ros-pkg/</url>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs"/>
+  <depend package="nav_msgs"/>
+  <depend package="tf"/>
+  <depend package="std_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="joy"/>
+  
+  <export>
+  	<cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
+
+</package>
+
+
