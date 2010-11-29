@@ -1,0 +1,13 @@
+<stack>
+  <description brief="ais_bonn_drivers">
+	
+	Drivers from the Autonomous Intelligent Systems Group at Bonn University
+
+  </description>
+  <author>Maintained by Andreas Hochrath, Torsten Fiolka</author>
+  <license>GPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ais_bonn_drivers</url>
+  <depend stack="ros" />
+
+</stack>
