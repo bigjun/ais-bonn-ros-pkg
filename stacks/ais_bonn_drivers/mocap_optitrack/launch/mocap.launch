@@ -1,10 +1,10 @@
 <launch> 
-  <node pkg="mocapOptiTrack" 
+  <node pkg="mocap_optitrack" 
 	type="mocap_node" 
 	name="mocap_node" 
 	respawn="false"
 	launch-prefix="xterm -title mocap_node -e sudo -E"
 	required="true">
-	<rosparam file="$(find mocapOptiTrack)/config/mocap.yaml" command="load" />
+	<rosparam file="$(find mocap_optitrack)/config/mocap.yaml" command="load" />
   </node>
 </launch>
