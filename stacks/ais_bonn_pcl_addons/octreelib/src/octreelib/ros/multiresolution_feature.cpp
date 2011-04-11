@@ -35,8 +35,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: feature.cpp 35422 2011-01-24 20:04:44Z rusu $
- *
  */
 
 #include "octreelib/ros/multiresolution_feature.h"
