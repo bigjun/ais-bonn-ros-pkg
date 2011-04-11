@@ -101,6 +101,7 @@ void nodelet::NormalEstimationOctree::computePublish( const PointCloudInConstPtr
 		else {
 			if( ((spatialaggregate::OcTreeNodeFixedCountAllocator< float, feature::NormalEstimationValue >*)allocator_)->numPoints < numPoints ) {
 				delete allocator_;
+				reallocate = true;
 			}
 		}
 	
