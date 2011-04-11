@@ -74,11 +74,17 @@ namespace nodelet {
 		void computePublish( const PointCloudInConstPtr &cloud, const IndicesConstPtr &indices );
 		
 		
+		/** \brief use fixed size allocator (default: true) */
 		bool fixed_size_;
+		
+		/** \brief minimum resolution of the octree (default: 0.005m) */
 		double min_resolution_;
+		
+		/** \brief maximum range of the octree (default: 30m) */
 		double max_range_;
+		
+		/** \brief minimum number of points for a normal fit (default: 25) */
 		int min_points_for_fit_;
-		bool visualize_normals_;
 		
 		int num_layers_;
 		
