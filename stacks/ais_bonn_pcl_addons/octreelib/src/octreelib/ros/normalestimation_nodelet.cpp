@@ -71,8 +71,7 @@ inline bool nodelet::NormalEstimationOctree::childInit( ros::NodeHandle &nh ) {
 		
 	}
 	
-	if( visualize_normals_ )
-		pub_normals_ = nh.advertise< visualization_msgs::MarkerArray >( "visualization_marker_array", max_queue_size_ );
+	pub_normals_ = nh.advertise< visualization_msgs::MarkerArray >( "visualization_marker_array", max_queue_size_ );
 		
 	return true;
 }
