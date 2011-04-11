@@ -1,12 +1,6 @@
 /**
-\mainpage
-\htmlinclude manifest.html
-
-\b octreelib is ... 
-
-<!-- 
-Provide an overview of your package.
--->
+@mainpage
+@htmlinclude manifest.html
 
 
 \section codeapi Code API
