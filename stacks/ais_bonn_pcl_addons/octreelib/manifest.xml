@@ -4,10 +4,10 @@
      The octreelib contains an octree implementation that is templated for coordinate and value type. It features fast sampling and normal calculation on many resolutions in parallel.
 
   </description>
-  <author>Jörg Stückler</author>
+  <author>Joerg Stueckler</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/vpcl</url>
+  <url>http://ros.org/wiki/octreelib</url>
   <depend package="roscpp" />
   <depend package="pcl" />
   <depend package="pcl_ros" />
