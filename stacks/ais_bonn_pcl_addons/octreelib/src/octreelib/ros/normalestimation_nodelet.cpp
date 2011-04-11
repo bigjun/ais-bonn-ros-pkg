@@ -90,18 +90,22 @@ void nodelet::NormalEstimationOctree::computePublish( const PointCloudInConstPtr
 	// else reset allocator for reuse
 	if( fixed_size_ ) {
 		
+		unsigned int numPoints = cloud.points.size();
+		if( indices )
+			numPoints = indices->size();
+		
 		bool reallocate = false;
 		if( !allocator_ ) {
 			reallocate = true;
 		}
 		else {
-			if( ((spatialaggregate::OcTreeNodeFixedCountAllocator< float, feature::NormalEstimationValue >*)allocator_)->numPoints < indices->size() ) {
+			if( ((spatialaggregate::OcTreeNodeFixedCountAllocator< float, feature::NormalEstimationValue >*)allocator_)->numPoints < numPoints ) {
 				delete allocator_;
 			}
 		}
 	
 		if( reallocate )
-			allocator_ = new spatialaggregate::OcTreeNodeFixedCountAllocator< float, feature::NormalEstimationValue >( indices->size() );
+			allocator_ = new spatialaggregate::OcTreeNodeFixedCountAllocator< float, feature::NormalEstimationValue >( numPoints );
 		else
 			allocator_->reset();
 		
