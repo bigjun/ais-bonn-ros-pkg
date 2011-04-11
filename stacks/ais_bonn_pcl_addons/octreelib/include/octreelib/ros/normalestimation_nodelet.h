@@ -5,6 +5,9 @@
  *  Author: Joerg Stueckler, 4/2011
  *  All rights reserved.
  *
+ *  Copyright (c) 2009, Willow Garage, Inc.
+ *  All rights reserved.
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
@@ -49,7 +52,7 @@
 
 namespace nodelet {
 	
-	/** \brief @b NormalEstimation estimates local surface properties at each 3D point, such as surface normals and
+	/** \brief @b NormalEstimationOctree estimates local surface properties at each 3D point, such as surface normals and
 	* curvatures.
 	*
 	* \author Joerg Stueckler
