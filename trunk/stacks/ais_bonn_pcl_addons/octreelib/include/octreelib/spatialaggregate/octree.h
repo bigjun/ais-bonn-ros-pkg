@@ -53,7 +53,7 @@ namespace spatialaggregate {
 		NUM_OCTREE_NODE_TYPES,
 	};
 	
-	
+	//! position in the octree with templated coordinate type and some operator overloads
 	template< typename CoordType >
 	class OcTreePosition {
 	public:
@@ -152,6 +152,7 @@ namespace spatialaggregate {
 	};
 	
 	
+	//! point in the octree with templated position and value
 	template< typename CoordType, typename ValueType >
 	class OcTreePoint {
 	public:
@@ -164,10 +165,8 @@ namespace spatialaggregate {
 	};
 	
 	
-	/*
-	 * OcTreeNode
+	/** \brief a node in the octree, either leaf or branching node
 	 *
-	 * capsulates branching and leaf node, no virtual functions..
 	 */
 	template< typename CoordType, typename ValueType >
 	class OcTreeNode {
@@ -227,10 +226,10 @@ namespace spatialaggregate {
 		unsigned int numPoints;
 		
 		
-		// position in my region?
+		//! position in my region?
 		inline bool inRegion( const OcTreePosition< CoordType >& position );
 		
-		// my center in given region?
+		//! my center in given region?
 		inline bool inRegion( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition );
 		
 		inline bool overlap( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition );
@@ -270,6 +269,9 @@ namespace spatialaggregate {
 	};
 	
 	
+	/** \brief simple allocator uses new operator
+	 *
+	 */
 	template< typename CoordType, typename ValueType >
 	class OcTreeNodeAllocator {
 	public:
@@ -289,6 +291,9 @@ namespace spatialaggregate {
 	};
 	
 	
+	/** \brief fixed count allocator, pre-allocates memory for a fixed number of points
+	 *
+	 */
 	template< typename CoordType, typename ValueType >
 	class OcTreeNodeFixedCountAllocator : public OcTreeNodeAllocator< CoordType, ValueType > {
 	public:
@@ -351,13 +356,16 @@ namespace spatialaggregate {
 	};
 
 	
+	/** \brief the octree class with some convenient constructors
+	 *
+	 */
 	template< typename CoordType, typename ValueType >
 	class OcTree {
 	public:
 		
 		OcTree( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize = 0, OcTreeNodeAllocator< CoordType, ValueType >* allocator = NULL );
 		
-		// creates a tree in which the node sizes are multiples of minimumVolumeSize with sufficient depth levels to capture points in maxDistance radius around center
+		//! creates a tree in which the node sizes are multiples of minimumVolumeSize with sufficient depth levels to capture points in maxDistance radius around center
 		OcTree( const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, CoordType maxDistance, OcTreeNodeAllocator< CoordType, ValueType >* allocator = NULL );
 		
 		~OcTree();
