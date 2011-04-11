@@ -90,7 +90,7 @@ void nodelet::NormalEstimationOctree::computePublish( const PointCloudInConstPtr
 	// else reset allocator for reuse
 	if( fixed_size_ ) {
 		
-		unsigned int numPoints = cloud.points.size();
+		unsigned int numPoints = cloud->points.size();
 		if( indices )
 			numPoints = indices->size();
 		
