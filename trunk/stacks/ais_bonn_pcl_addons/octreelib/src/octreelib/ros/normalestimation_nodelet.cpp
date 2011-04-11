@@ -53,11 +53,10 @@ bool nodelet::NormalEstimationOctree::hasSubscribers() {
 
 inline bool nodelet::NormalEstimationOctree::childInit( ros::NodeHandle &nh ) {
 	
-	nh.param( "fixed_size", fixed_size_, false );
+	nh.param( "fixed_size", fixed_size_, true );
 	nh.param( "min_resolution", min_resolution_, 0.005 );
 	nh.param( "max_range", max_range_, 30.0 );
 	nh.param( "min_points_for_fit", min_points_for_fit_, 25 );
-	nh.param( "visualize_normals", visualize_normals_, false );
 	
 	allocator_ = NULL;
 	
@@ -175,7 +174,7 @@ void nodelet::NormalEstimationOctree::computePublish( const PointCloudInConstPtr
 //	ROS_ERROR("octree normal estimation took %f for %i points", (finishTime-startTime).toSec(), indices ? indices->size() : cloud->points.size() );
 	
 	
-	if( visualize_normals_ ) {
+	if( pub_normals_.getNumSubscribers() > 0 ) {
 		
 		visualization_msgs::MarkerArray markerArray;
 		
