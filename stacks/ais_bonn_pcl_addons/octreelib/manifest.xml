@@ -1,0 +1,27 @@
+<package>
+  <description brief="octreelib">
+
+     octreelib
+
+  </description>
+  <author>Jörg Stückler</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/vpcl</url>
+  <depend package="roscpp" />
+  <depend package="pcl" />
+  <depend package="pcl_ros" />
+  <depend package="sensor_msgs" />
+  <depend package="visualization_msgs" />
+  <depend package="eigen" />
+  <depend package="dynamic_reconfigure" />
+  <depend package="nodelet" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/src -I${prefix}/cfg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lvpcl -lvpcl_visualization"/>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+  
+</package>
+
+

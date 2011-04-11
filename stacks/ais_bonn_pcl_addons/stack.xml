@@ -1,0 +1,9 @@
+<stack>
+  <description brief="ais_bonn_pcl_addons">ais_bonn_pcl_addons</description>
+  <author>Maintained by Joerg Stueckler</author>
+  <license>BSD</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ais_bonn_pcl_addons</url>
+  <depend stack="ros" />
+
+</stack>
