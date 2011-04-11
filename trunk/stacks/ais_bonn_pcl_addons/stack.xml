@@ -4,6 +4,8 @@
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/ais_bonn_pcl_addons</url>
+
   <depend stack="ros" />
+  <depend stack="perception_pcl" />
 
 </stack>
