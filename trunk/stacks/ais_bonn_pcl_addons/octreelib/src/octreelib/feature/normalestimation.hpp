@@ -81,7 +81,7 @@ boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::bui
 		point.value.summedPos(0) = x;
 		point.value.summedPos(1) = y;
 		point.value.summedPos(2) = z;
-		point.value.pointCloudIndex = i;
+		point.value.pointCloudIndex = indices[i];
 
 		spatialaggregate::OcTreeNode<CoordType, ValueType>* n = octree->addPoint(point);
 

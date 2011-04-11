@@ -36,7 +36,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  implements pcl_ros::Feature 
  */
 
 #ifndef __NORMALESTIMATION_OCTREE_NODELET_H__
@@ -58,6 +57,11 @@ namespace nodelet {
 	* \author Joerg Stueckler
 	*/
 	class NormalEstimationOctree : public pcl_ros::MultiResolutionFeature {
+	public:
+		~NormalEstimationOctree() {
+			if( allocator_ )
+				delete allocator_;
+		}
 		
 	protected:
 		

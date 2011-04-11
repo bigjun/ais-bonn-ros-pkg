@@ -36,7 +36,6 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *
- *  implements pcl_ros::Feature 
  */
 
 
@@ -211,7 +210,7 @@ void nodelet::NormalEstimationOctree::computePublish( const PointCloudInConstPtr
 			
 			marker.lifetime = ros::Duration(0.0);
 			
-			for( int j = 0; j < octreeSamplingMap[i].size(); j++ ) {
+			for( unsigned int j = 0; j < octreeSamplingMap[i].size(); j++ ) {
 				
 				spatialaggregate::OcTreeNode< float, feature::NormalEstimationValue >* n = octreeSamplingMap[i][j];
 				
