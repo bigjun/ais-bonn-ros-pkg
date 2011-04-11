@@ -1,0 +1,10 @@
+<stack>
+  <description brief="ais_bonn_drivers">ais_bonn_drivers</description>
+  <author>Maintained by Andreas Hochrath and Torsten Fiolka</author>
+  <license>BSD, GPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/ais_bonn_drivers</url>
+
+  <depend stack="ros" />
+
+</stack>
