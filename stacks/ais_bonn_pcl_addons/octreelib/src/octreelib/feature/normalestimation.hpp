@@ -145,7 +145,7 @@ bool feature::calculateNormal( spatialaggregate::OcTreeNode<CoordType, ValueType
 }
 
 
-//! Gets the normal and the curvature of a given integral value and a point count
+//! Determines normal and curvature from a node's integral value and point count
 template<typename CoordType, typename ValueType>
 bool feature::calculateNormalAndCurvature( spatialaggregate::OcTreeNode<CoordType, ValueType>* treenode, Eigen::Vector3f& normal, float& curvature, int minimumPointsForNormal ) {
 	

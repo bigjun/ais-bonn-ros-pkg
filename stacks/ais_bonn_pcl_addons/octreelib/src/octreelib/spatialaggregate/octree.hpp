@@ -372,7 +372,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 
 
 template< typename CoordType, typename ValueType >
-inline ValueType spatialaggregate::OcTreeNode< CoordType, ValueType >::getIntegralValueInVolume( const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
+inline ValueType spatialaggregate::OcTreeNode< CoordType, ValueType >::getValueInVolume( const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
 	
 	if( type == OCTREE_LEAF_NODE ) {
 	
@@ -398,7 +398,7 @@ inline ValueType spatialaggregate::OcTreeNode< CoordType, ValueType >::getIntegr
 		for( unsigned int i = 0; i < 8; i++ ) {
 			if(!siblings[i])
 				continue;
-			value += siblings[i]->getIntegralValueInVolume( minPosition, maxPosition, minimumSearchVolumeSize );
+			value += siblings[i]->getValueInVolume( minPosition, maxPosition, minimumSearchVolumeSize );
 		}
 		
 		return value;
@@ -409,7 +409,7 @@ inline ValueType spatialaggregate::OcTreeNode< CoordType, ValueType >::getIntegr
 
 
 template< typename CoordType, typename ValueType >
-inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getIntegralValueAndCountInVolume( ValueType& value, unsigned int& count, const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getValueAndCountInVolume( ValueType& value, unsigned int& count, const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
 	
 	if( type == OCTREE_LEAF_NODE ) {
 	
@@ -440,7 +440,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getIntegralVal
 			if(!siblings[i])
 				continue;
 			
-			siblings[i]->getIntegralValueAndCountInVolume( value, count, minPosition, maxPosition, minimumSearchVolumeSize );
+			siblings[i]->getValueAndCountInVolume( value, count, minPosition, maxPosition, minimumSearchVolumeSize );
 			
 		}
 		
@@ -820,19 +820,19 @@ inline std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* > spat
 
 
 template< typename CoordType, typename ValueType >
-inline ValueType spatialaggregate::OcTree< CoordType, ValueType >::getIntegralValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
+inline ValueType spatialaggregate::OcTree< CoordType, ValueType >::getValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
 	
-	return root->getIntegralValueInVolume( minPosition, maxPosition, minimumSearchVolumeSize );
+	return root->getValueInVolume( minPosition, maxPosition, minimumSearchVolumeSize );
 	
 }
 
 
 template< typename CoordType, typename ValueType >
-inline void spatialaggregate::OcTree< CoordType, ValueType >::getIntegralValueAndCountInVolume( ValueType& value, unsigned int& count, const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
+inline void spatialaggregate::OcTree< CoordType, ValueType >::getValueAndCountInVolume( ValueType& value, unsigned int& count, const spatialaggregate::OcTreePosition< CoordType >& minPosition, const spatialaggregate::OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize ) {
 	
 	value = ValueType(0);
 	count = 0;
-	root->getIntegralValueAndCountInVolume( value, count, minPosition, maxPosition, minimumSearchVolumeSize );
+	root->getValueAndCountInVolume( value, count, minPosition, maxPosition, minimumSearchVolumeSize );
 	
 }
 
