@@ -86,7 +86,6 @@ namespace pcl_ros {
 		/** \brief Null passthrough filter, used for pushing empty elements in the 
 		* synchronizer */
 		message_filters::PassThrough<PointIndices> nf_pi_;
-		message_filters::PassThrough<PointCloudIn> nf_pc_;
 		
 		/** \brief Only start computing features when there are subscribers */
 		virtual bool hasSubscribers() = 0;
@@ -99,9 +98,6 @@ namespace pcl_ros {
 		{
 			PointIndices indices;
 			indices.header.stamp = input->header.stamp;
-			PointCloudIn cloud;
-			cloud.header.stamp = input->header.stamp;
-			nf_pc_.add (cloud.makeShared ());
 			nf_pi_.add (boost::make_shared<PointIndices> (indices));
 		}
 
