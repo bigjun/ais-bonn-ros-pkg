@@ -251,9 +251,9 @@ namespace spatialaggregate {
 
 		inline void getAllNodesInVolumeOnSamplingDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, int searchDepth, bool higherDepthLeaves, int maxDepth );
 
-		inline ValueType getIntegralValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
+		inline ValueType getValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
 		
-		inline void getIntegralValueAndCountInVolume( ValueType& integralValue, unsigned int& count, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
+		inline void getValueAndCountInVolume( ValueType& value, unsigned int& count, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
 		
 		inline void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
 		
@@ -321,13 +321,11 @@ namespace spatialaggregate {
 		
 		inline virtual OcTreeNode< CoordType, ValueType >* allocateLeafNode() { 
 			return currentLeafNode++;
-/*			return &leafNodes[leafNodeIdx++]; */
 		}
 		inline virtual void deallocateLeafNode( OcTreeNode< CoordType, ValueType >* node ) {}
 		
 		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { 
  			return currentBranchingNode++;
-/*			return &branchingNodes[branchingNodeIdx++]; */
 		}
 		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) {}
 		
@@ -337,12 +335,10 @@ namespace spatialaggregate {
 			OcTreeNode< CoordType, ValueType >* lastLeafNode = currentLeafNode;
 			for( currentLeafNode = &leafNodes[0]; currentLeafNode != lastLeafNode; currentLeafNode++ )
 				currentLeafNode->initialize();
-//				*currentLeafNode = OcTreeLeafNode< CoordType, ValueType >( this );
 
 			OcTreeNode< CoordType, ValueType >* lastBranchingNode = currentBranchingNode;
 			for( currentBranchingNode = &branchingNodes[0]; currentBranchingNode != lastBranchingNode; currentBranchingNode++ )
 				currentBranchingNode->initialize();
-//				*currentBranchingNode = OcTreeBranchingNode< CoordType, ValueType >( this );
 			
 			currentLeafNode = &leafNodes[0];
 			currentBranchingNode = &branchingNodes[0];
@@ -382,10 +378,10 @@ namespace spatialaggregate {
 		inline std::vector< OcTreeNode< CoordType, ValueType >* > getAllNodesInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 
 		// complete tree
-		inline ValueType getIntegralValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
+		inline ValueType getValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 		
 		// complete tree
-		inline void getIntegralValueAndCountInVolume( ValueType& integralValue, unsigned int& count, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
+		inline void getValueAndCountInVolume( ValueType& value, unsigned int& count, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 		
 		inline void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 		

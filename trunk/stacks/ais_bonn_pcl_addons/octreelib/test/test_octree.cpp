@@ -194,11 +194,11 @@ void testOnRandomPoints() {
 
 			ROS_ERROR("querying integral value in range %f,%f,%f -> %f,%f,%f", minPos[0], minPos[1], minPos[2], maxPos[0], maxPos[1], maxPos[2]);
 			startTime = ros::Time::now();
-			float integralValue = tree.getIntegralValueInVolume( minPos, maxPos, 0 );
+			float value = tree.getValueInVolume( minPos, maxPos, 0 );
 			stopTime = ros::Time::now();
 			ROS_ERROR( "took: %f", (stopTime-startTime).toSec() );
 			
-			ROS_ERROR("integral value %f", integralValue);
+			ROS_ERROR("integral value %f", value);
 			
 			
 		}
@@ -267,13 +267,13 @@ void testOnRandomPoints() {
 
 			ROS_ERROR("querying integral value in range %f,%f,%f -> %f,%f,%f", minPos[0], minPos[1], minPos[2], maxPos[0], maxPos[1], maxPos[2]);
 			startTime = ros::Time::now();
-			int integralValue = 0;
+			int value = 0;
 			unsigned int count = 0;
-			tree.getIntegralValueAndCountInVolume( integralValue, count, minPos, maxPos, 0 );
+			tree.getValueAndCountInVolume( value, count, minPos, maxPos, 0 );
 			stopTime = ros::Time::now();
 			ROS_ERROR( "took: %f", (stopTime-startTime).toSec() );
 			
-			ROS_ERROR("integral value %i, count %i", integralValue, count);
+			ROS_ERROR("integral value %i, count %i", value, count);
 			
 			
 		}
@@ -340,13 +340,13 @@ void testOnRandomPoints() {
 
 			ROS_ERROR("querying integral value in range %i,%i,%i -> %i,%i,%i", minPos[0], minPos[1], minPos[2], maxPos[0], maxPos[1], maxPos[2]);
 			startTime = ros::Time::now();
-			int integralValue = 0;
+			int value = 0;
 			unsigned int count = 0;
-			tree.getIntegralValueAndCountInVolume( integralValue, count, minPos, maxPos, 0 );
+			tree.getValueAndCountInVolume( value, count, minPos, maxPos, 0 );
 			stopTime = ros::Time::now();
 			ROS_ERROR( "took: %f", (stopTime-startTime).toSec() );
 			
-			ROS_ERROR("integral value %i, count %i", integralValue, count);
+			ROS_ERROR("integral value %i, count %i", value, count);
 			
 			
 		}
@@ -456,7 +456,7 @@ void pointCloudCallback( const sensor_msgs::PointCloud2ConstPtr& msg ) {
 		nodesByDepth[ nodesAll[i]->depth-1 ].push_back( nodesAll[i] );
 		
 /*		const float size = (nodesAll[i]->maxPosition[0] - nodesAll[i]->minPosition[0]);
-		nodesAll[i]->integralValue[4] = size * size * size / nodesAll[i]->integralValue[4];*/
+		nodesAll[i]->value[4] = size * size * size / nodesAll[i]->value[4];*/
 	}
 	
 	if( true )
@@ -486,18 +486,18 @@ void pointCloudCallback( const sensor_msgs::PointCloud2ConstPtr& msg ) {
 				else
 					tightestNode = tightestNode->getTightestNode( minPos, maxPos, minLeafSize );
 				
-				Vec< float, 4 > integralValueExact, integralValueApproximate;
+				Vec< float, 4 > valueExact, valueApproximate;
 				unsigned int countExact, countApproximate;
 			
-				tree.getIntegralValueAndCountInVolume( integralValueExact, countExact, minPos, maxPos, 0 );
-				tightestNode->getIntegralValueAndCountInVolume( integralValueApproximate, countApproximate, minPos, maxPos, minLeafSize );
+				tree.getValueAndCountInVolume( valueExact, countExact, minPos, maxPos, 0 );
+				tightestNode->getValueAndCountInVolume( valueApproximate, countApproximate, minPos, maxPos, minLeafSize );
 				
 				if( countExact > 0 && countApproximate > 0 ) {
-					integralValueExact /= countExact;
-					integralValueApproximate /= countApproximate;
+					valueExact /= countExact;
+					valueApproximate /= countApproximate;
 					
-					avgError += (integralValueExact - integralValueApproximate).norm();
-					maxError = std::max( maxError, (integralValueExact - integralValueApproximate).norm() );
+					avgError += (valueExact - valueApproximate).norm();
+					maxError = std::max( maxError, (valueExact - valueApproximate).norm() );
 				}
 				
 			}
@@ -530,10 +530,10 @@ void pointCloudCallback( const sensor_msgs::PointCloud2ConstPtr& msg ) {
 				
 				tightestNode = pointNodesLayered[l][i]->getTightestNode( minPos, maxPos, minLeafSize );
 				
-				Vec< float, 4 > integralValueApproximate;
+				Vec< float, 4 > valueApproximate;
 				unsigned int countApproximate;
 			
-				tightestNode->getIntegralValueAndCountInVolume( integralValueApproximate, countApproximate, minPos, maxPos, minLeafSize );
+				tightestNode->getValueAndCountInVolume( valueApproximate, countApproximate, minPos, maxPos, minLeafSize );
 				
 			}
 
