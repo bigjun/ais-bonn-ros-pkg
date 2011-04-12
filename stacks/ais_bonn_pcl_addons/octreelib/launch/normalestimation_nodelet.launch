@@ -2,7 +2,7 @@
 	<node pkg="nodelet" type="nodelet" name="standalone_nodelet"  args="manager" output="screen"/>
 
 	<node pkg="nodelet" type="nodelet" name="NormalEstimationOctree" args="load octreelib/NormalEstimationOctree standalone_nodelet" output="screen" required="true">
-  	  <remap from="~input" to="/camera/depth/points2" />
+  	  <remap from="~input" to="/camera/depth/points" />
           <rosparam>
             visualize_normals: true
           </rosparam>
