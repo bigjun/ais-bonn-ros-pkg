@@ -583,7 +583,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::sweepDown( voi
 
 
 template< typename CoordType, typename ValueType >
-inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize ) {
+inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) ) {
 	
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* n = allocator->allocateLeafNode();//new spatialaggregate::OcTreeLeafNode< CoordType, ValueType >();
 	n->position = point.position;
@@ -591,12 +591,12 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 	n->closestPositionDistance = 0;
 	n->value = point.value;
 	n->numPoints = 1;
-	return addPoint( n, minimumVolumeSize );
+	return addPoint( n, minimumVolumeSize, splitCriterion );
 	
 }
 	
 template< typename CoordType, typename ValueType >
-inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::addPoint( spatialaggregate::OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize ) {
+inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::addPoint( spatialaggregate::OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) ) {
 
 	// traverse from root until we found an empty leaf node
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* parentNode = parent;
@@ -653,10 +653,21 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf = currNode;// ((spatialaggregate::OcTreeBranchingNode< CoordType, ValueType >*) parentNode)->siblings[octant]);
 		
 		
+		// check custom split criterion
+		if( splitCriterion && !splitCriterion( oldLeaf, leaf ) ) {
+
+			oldLeaf->value += leaf->value;
+			oldLeaf->numPoints += leaf->numPoints;
+			allocator->deallocate( leaf );
+			return oldLeaf;
+
+		}
+
+
 		// check if old leaf covers less than double the minimumVolumeSize
 		if( (oldLeaf->maxPosition[0] - oldLeaf->minPosition[0]) - minimumVolumeSize * 2.f <= -OCTREE_EPSILON * minimumVolumeSize ) {
 			
-			// discard point
+			// dont split!
 			// TODO: average point position?
 			oldLeaf->value += leaf->value;
 			oldLeaf->numPoints += leaf->numPoints;
@@ -703,6 +714,24 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		
 	}
 	
+}
+
+
+template< typename CoordType, typename ValueType >
+inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::findRepresentative( const OcTreePosition< CoordType >& position, CoordType minimumSearchVolumeSize ) {
+	if( type == OCTREE_LEAF_NODE )
+		return this;
+	else {
+
+		if( (this->maxPosition[0] - this->minPosition[0]) - minimumSearchVolumeSize <= -OCTREE_EPSILON * minimumSearchVolumeSize )
+			return this;
+
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* n = siblings[ getOctant(position) ];
+		if( n )
+			return n->findRepresentative( position, minimumSearchVolumeSize );
+		else
+			return this;
+	}
 }
 
 

@@ -196,6 +196,7 @@ namespace spatialaggregate {
 			depth = 0;
 			numPoints = 0;
 			value = (ValueType) 0;
+			closestPositionDistance = 1e100;
 		}
 		
 		~OcTreeNode() {
@@ -242,8 +243,8 @@ namespace spatialaggregate {
 		
 		inline void setDimensionsForParentOctant( unsigned int octant );
 		
-		inline OcTreeNode< CoordType, ValueType >* addPoint( OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize );
-		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize );
+		inline OcTreeNode< CoordType, ValueType >* addPoint( OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
+		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
 		
 		inline void getPointsInVolume( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 		
@@ -266,6 +267,11 @@ namespace spatialaggregate {
 		
 		inline void sweepDown( void* data, void (*f)( OcTreeNode< CoordType, ValueType >* current, OcTreeNode< CoordType, ValueType >* next, void* data ) );
 		
+		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const OcTreePosition< CoordType >& position, CoordType minimumSearchVolumeSize );
+
+
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
 	};
 	
 	
@@ -285,6 +291,7 @@ namespace spatialaggregate {
 		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_BRANCHING_NODE, this ); }
 		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
 		
+		inline virtual OcTreeNode< CoordType, ValueType >* allocate() { return new OcTreeNode< CoordType, ValueType >(); }
 		inline virtual void deallocate( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
 		
 		inline virtual void reset() {}
@@ -329,6 +336,9 @@ namespace spatialaggregate {
 		}
 		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) {}
 		
+		// should not be used
+		inline virtual OcTreeNode< CoordType, ValueType >* allocate() { return allocateBranchingNode(); }
+
 		inline virtual void deallocate( OcTreeNode< CoordType, ValueType >* node ) {}
 		
 		inline virtual void reset() {
