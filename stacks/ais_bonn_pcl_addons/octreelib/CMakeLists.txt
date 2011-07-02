@@ -41,11 +41,11 @@ rosbuild_add_executable(test_normalestimation test/test_normalestimation.cpp)
 rosbuild_add_compile_flags (test_normalestimation ${SSE_FLAGS})
 
 
-rosbuild_add_library( octreelib_normalestimation_nodelet
-		      src/octreelib/ros/multiresolution_feature.cpp
-                      src/octreelib/ros/normalestimation_nodelet.cpp
-                    )
-rosbuild_add_compile_flags( octreelib_normalestimation_nodelet ${SSE_FLAGS})
+#rosbuild_add_library( octreelib_normalestimation_nodelet
+#		      src/octreelib/ros/multiresolution_feature.cpp
+#                      src/octreelib/ros/normalestimation_nodelet.cpp
+#                    )
+#rosbuild_add_compile_flags( octreelib_normalestimation_nodelet ${SSE_FLAGS})
 
 
 #common commands for building c++ executables and libraries
