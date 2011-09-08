@@ -37,7 +37,7 @@
 
 
 template<typename CoordType, typename ValueType, typename PointType>
-boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::buildNormalEstimationOctree( const pcl::PointCloud<PointType>& cloud, const std::vector< int >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType >* allocator ) {
+boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::buildNormalEstimationOctree( const pcl::PointCloud<PointType>& cloud, const std::vector< int >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
 
 	spatialaggregate::OcTreePosition< CoordType > center;
 	center[0] = 0;
@@ -98,7 +98,7 @@ boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::bui
 
 
 template<typename CoordType, typename ValueType, typename PointType>
-boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::buildNormalEstimationOctree( const boost::shared_ptr< const pcl::PointCloud<PointType> >& cloud, const boost::shared_ptr< const std::vector< int > >& inputIndices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType >* allocator ) {
+boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::buildNormalEstimationOctree( const boost::shared_ptr< const pcl::PointCloud<PointType> >& cloud, const boost::shared_ptr< const std::vector< int > >& inputIndices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
 	
 	if( !inputIndices ) {
 		std::vector< int > indices( cloud->points.size() );
@@ -111,6 +111,8 @@ boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::bui
 
 	
 }
+
+
 
 
 //! Gets the normal of a given integral value and a point count

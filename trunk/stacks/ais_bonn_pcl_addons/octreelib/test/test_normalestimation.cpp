@@ -24,7 +24,7 @@ using namespace spatialaggregate;
 using namespace algorithm;
 using namespace feature;
 
-OcTreeNodeFixedCountAllocator< float, NormalEstimationValue >* fixedCountAllocator = NULL;
+boost::shared_ptr< OcTreeNodeFixedCountAllocator< float, NormalEstimationValue > > fixedCountAllocator;
 
 void testOnRandomPoints() {
 
@@ -32,8 +32,7 @@ void testOnRandomPoints() {
 	const float maxRange = 10.f;
 	const float minResolution = 0.005f;
 	
-	fixedCountAllocator = new OcTreeNodeFixedCountAllocator< float, NormalEstimationValue >( numPoints );
-	
+	fixedCountAllocator = boost::make_shared< OcTreeNodeFixedCountAllocator< float, NormalEstimationValue > >( numPoints );
 	for( unsigned int j = 0; j < 10; j++ )
 	{
 		
@@ -61,22 +60,14 @@ void testOnRandomPoints() {
 		}
 		
 		
-		OcTreeNodeAllocator< float, NormalEstimationValue >* allocator = NULL;
-		if( j >= 0 )
-			allocator = fixedCountAllocator;
-		
-		if( j >= 0 )
-			ROS_ERROR("fixed count allocator");
-		
-		if( allocator )
-			allocator->reset();
+		fixedCountAllocator->reset();
 		
 		int octreeDepth = 0;
 		OcTreeSamplingMap< float, NormalEstimationValue > octreeSamplingMap;
 
 		ROS_ERROR("calculating normals on %i points ", numPoints);
 		ros::Time startTime = ros::Time::now();
-		boost::shared_ptr< spatialaggregate::OcTree<float, NormalEstimationValue> > octree = buildNormalEstimationOctree< float, NormalEstimationValue, pcl::PointXYZRGB >( points, indices, octreeDepth, octreeSamplingMap, maxRange, minResolution, allocator );
+		boost::shared_ptr< spatialaggregate::OcTree<float, NormalEstimationValue> > octree = buildNormalEstimationOctree< float, NormalEstimationValue, pcl::PointXYZRGB >( points, indices, octreeDepth, octreeSamplingMap, maxRange, minResolution, fixedCountAllocator );
 		for( int i = 0; i <= octreeDepth; i++ )
 			calculateNormalsOnOctreeLayer< float, NormalEstimationValue >( octreeSamplingMap[i], 25 );
 		ros::Time stopTime = ros::Time::now();
@@ -181,29 +172,18 @@ void pointCloudCallback( const sensor_msgs::PointCloud2ConstPtr& msg ) {
 	for( unsigned int i = 0; i < numPoints; i++ )
 		indices[i] = i;
 	
-	if( fixedCountAllocator == NULL ) 
-		fixedCountAllocator = new OcTreeNodeFixedCountAllocator< float, NormalEstimationValue >( numPoints );
-	
+	fixedCountAllocator = boost::make_shared< OcTreeNodeFixedCountAllocator< float, NormalEstimationValue > >( numPoints );
 	
 	for( int j = 0; j < 2; j++ ) {
 		
-		OcTreeNodeAllocator< float, NormalEstimationValue >* allocator = NULL;
-		if( j == 1 )
-			allocator = fixedCountAllocator;
-		
-		if( j == 1 )
-			ROS_ERROR("fixed count allocator");
-		
-		if( allocator )
-			allocator->reset();
-		
+		fixedCountAllocator->reset();
 		
 		int octreeDepth = 0;
 		OcTreeSamplingMap< float, NormalEstimationValue > octreeSamplingMap;
 
 		ROS_ERROR("calculating normals on %i points ", numPoints);
 		ros::Time startTime = ros::Time::now();
-		boost::shared_ptr< spatialaggregate::OcTree<float, NormalEstimationValue> > octree = buildNormalEstimationOctree< float, NormalEstimationValue, pcl::PointXYZRGB >( pointCloudIn, indices, octreeDepth, octreeSamplingMap, maxRange, minResolution, allocator );
+		boost::shared_ptr< spatialaggregate::OcTree<float, NormalEstimationValue> > octree = buildNormalEstimationOctree< float, NormalEstimationValue, pcl::PointXYZRGB >( pointCloudIn, indices, octreeDepth, octreeSamplingMap, maxRange, minResolution, fixedCountAllocator );
 		for( int i = 0; i <= octreeDepth; i++ )
 			calculateNormalsOnOctreeLayer< float, NormalEstimationValue >( octreeSamplingMap[i], 10 );
 		ros::Time stopTime = ros::Time::now();

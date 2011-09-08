@@ -40,8 +40,14 @@
 
 #include <vector>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/enable_shared_from_this.hpp>
+
 #include <Eigen/Core>
 #include <Eigen/Eigen>
+
+#include <ostream>
 
 namespace spatialaggregate {
 	
@@ -174,19 +180,17 @@ namespace spatialaggregate {
 
 		OcTreeNode() { 
 			this->type = NUM_OCTREE_NODE_TYPES;
-			this->allocator = NULL; 
 			initialize();
 		}
 		
 		OcTreeNode( OcTreeNodeType type ) { 
 			this->type = type;
-			this->allocator = NULL; 
 			initialize();
 		}
 
-		OcTreeNode( OcTreeNodeType type, OcTreeNodeAllocator< CoordType, ValueType >* allocator ) { 
+		OcTreeNode( OcTreeNodeType type, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
 			this->type = type;
-			this->allocator = allocator; 
+			this->allocator = allocator;
 			initialize();
 		}
 		
@@ -196,7 +200,7 @@ namespace spatialaggregate {
 			depth = 0;
 			numPoints = 0;
 			value = (ValueType) 0;
-			closestPositionDistance = 1e100;
+			closestPositionDistance = std::numeric_limits< CoordType >::max();
 		}
 		
 		~OcTreeNode() {
@@ -214,7 +218,7 @@ namespace spatialaggregate {
 		OcTreeNode* parent;
 		OcTreeNode< CoordType, ValueType >* siblings[8];
 		
-		OcTreeNodeAllocator< CoordType, ValueType >* allocator;
+		boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator;
 		
 		// dimensions of the space covered by this node
 		OcTreePosition< CoordType > position; // center position
@@ -243,8 +247,9 @@ namespace spatialaggregate {
 		
 		inline void setDimensionsForParentOctant( unsigned int octant );
 		
-		inline OcTreeNode< CoordType, ValueType >* addPoint( OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
-		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
+		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize );
+//		inline OcTreeNode< CoordType, ValueType >* addPoint( OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
+//		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
 		
 		inline void getPointsInVolume( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
 		
@@ -279,16 +284,16 @@ namespace spatialaggregate {
 	 *
 	 */
 	template< typename CoordType, typename ValueType >
-	class OcTreeNodeAllocator {
+	class OcTreeNodeAllocator : public boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > > {
 	public:
 		
 		OcTreeNodeAllocator() {}
-		~OcTreeNodeAllocator() {}
+		virtual ~OcTreeNodeAllocator() { std::cout << "deleting allocator\n"; }
 		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocateLeafNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_LEAF_NODE, this ); }
+		inline virtual OcTreeNode< CoordType, ValueType >* allocateLeafNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_LEAF_NODE, boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this() ); }
 		inline virtual void deallocateLeafNode( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
 		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_BRANCHING_NODE, this ); }
+		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_BRANCHING_NODE, boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this() ); }
 		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
 		
 		inline virtual OcTreeNode< CoordType, ValueType >* allocate() { return new OcTreeNode< CoordType, ValueType >(); }
@@ -309,30 +314,35 @@ namespace spatialaggregate {
 			leafNodes = new OcTreeNode< CoordType, ValueType >[ numPoints+1 ];
 			for( currentLeafNode = &leafNodes[0]; currentLeafNode != &leafNodes[numPoints+1]; currentLeafNode++ ) {
 				currentLeafNode->type = OCTREE_LEAF_NODE;
-				currentLeafNode->allocator = this;
+//				currentLeafNode->allocator = boost::enable_shared_from_this< OcTreeNodeFixedCountAllocator< CoordType, ValueType > >::shared_from_this();
 			}
 			branchingNodes = new OcTreeNode< CoordType, ValueType >[ 2*numPoints+1 ];
 			for( currentBranchingNode = &branchingNodes[0]; currentBranchingNode != &branchingNodes[2*numPoints+1]; currentBranchingNode++ ) {
 				currentBranchingNode->type = OCTREE_BRANCHING_NODE;
-				currentBranchingNode->allocator = this;
+//				currentBranchingNode->allocator = boost::enable_shared_from_this< OcTreeNodeFixedCountAllocator< CoordType, ValueType > >::shared_from_this();
 			}
 			currentLeafNode = &leafNodes[0];
 			currentBranchingNode = &branchingNodes[0];
 			this->numPoints = numPoints;
 		}
 		
-		~OcTreeNodeFixedCountAllocator() {
+		virtual ~OcTreeNodeFixedCountAllocator() {
+			std::cout << "deleting fixed count allocator\n";
 			delete[] leafNodes;
 			delete[] branchingNodes;
 		}
 		
 		inline virtual OcTreeNode< CoordType, ValueType >* allocateLeafNode() { 
-			return currentLeafNode++;
+			currentLeafNode++;
+			currentLeafNode->allocator = boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this();
+			return currentLeafNode;
 		}
 		inline virtual void deallocateLeafNode( OcTreeNode< CoordType, ValueType >* node ) {}
 		
 		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { 
- 			return currentBranchingNode++;
+			currentBranchingNode++;
+			currentBranchingNode->allocator = boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this();
+			return currentBranchingNode;
 		}
 		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) {}
 		
@@ -369,10 +379,12 @@ namespace spatialaggregate {
 	class OcTree {
 	public:
 		
-		OcTree( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize = 0, OcTreeNodeAllocator< CoordType, ValueType >* allocator = NULL );
+//		OcTree( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize );
+		OcTree( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator = boost::make_shared< OcTreeNodeAllocator< CoordType, ValueType > >() );
 		
 		//! creates a tree in which the node sizes are multiples of minimumVolumeSize with sufficient depth levels to capture points in maxDistance radius around center
-		OcTree( const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, CoordType maxDistance, OcTreeNodeAllocator< CoordType, ValueType >* allocator = NULL );
+//		OcTree( const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, CoordType maxDistance );
+		OcTree( const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, CoordType maxDistance, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator = boost::make_shared< OcTreeNodeAllocator< CoordType, ValueType > >() );
 		
 		~OcTree();
 		
@@ -400,10 +412,8 @@ namespace spatialaggregate {
 		
 		CoordType minimumVolumeSize; 
 		
-		OcTreeNodeAllocator< CoordType, ValueType >* allocator;
-		
-		bool deleteAllocator;
-		
+		boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator;
+
 	};
 
 
