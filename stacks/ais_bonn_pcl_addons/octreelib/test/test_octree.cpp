@@ -42,7 +42,7 @@ void testOnRandomPoints() {
 		center[2] = 0;
 		
 		{
-			OcTree< float, float > tree( dimensions, center );
+			OcTree< float, float > tree( dimensions, center, 0, boost::make_shared< OcTreeNodeAllocator< float, float > >() );
 			
 			OcTreePoint< float, float > point;
 			point.position[0] = 0;
@@ -134,17 +134,17 @@ void testOnRandomPoints() {
 		center[2] = 0;
 		
 		const unsigned int numPoints = 1080*1000;
-		OcTreeNodeFixedCountAllocator< float, float >* fixedCountAllocator = new OcTreeNodeFixedCountAllocator< float, float >( numPoints );
+		boost::shared_ptr< OcTreeNodeFixedCountAllocator< float, float > > fixedCountAllocator = boost::make_shared< OcTreeNodeFixedCountAllocator< float, float > >( numPoints );
 		
 		for( unsigned int j = 0; j < 6; j++ )
 		{
 			
-			OcTreeNodeAllocator< float, float >* allocator = NULL;
-			if( j >= 3 )
+			boost::shared_ptr< OcTreeNodeAllocator< float, float > > allocator = boost::make_shared< OcTreeNodeAllocator< float, float > >();
+			if( j >= 3 ) {
 				allocator = fixedCountAllocator;
-			
-			if( allocator )
 				allocator->reset();
+			}
+			
 			OcTree< float, float > tree( dimensions, center, 0, allocator );
 			
 			std::vector< OcTreePoint< float, float > > points;
@@ -220,7 +220,7 @@ void testOnRandomPoints() {
 		
 		for( unsigned int j = 0; j < 1; j++ )
 		{
-			OcTree< float, int > tree( dimensions, center, 0 );
+			OcTree< float, int > tree( dimensions, center, 0, boost::make_shared< OcTreeNodeAllocator< float, int > >() );
 			
 			OcTreePosition< float > minPos, maxPos;
 			
@@ -383,7 +383,7 @@ void pointCloudCallback( const sensor_msgs::PointCloud2ConstPtr& msg ) {
 	center[2] = 0;
 		
 	const float minTreeLeafSize = 0.005f;//1e-4f;
-	OcTree< float, Vec< float, 4 > > tree( dimensions, center, minTreeLeafSize );
+	OcTree< float, Vec< float, 4 > > tree( dimensions, center, minTreeLeafSize, boost::make_shared< OcTreeNodeAllocator< float, Vec< float, 4 > > >() );
 	
 	std::vector< OcTreeNode< float, Vec< float, 4 > >* > pointNodes;
 	

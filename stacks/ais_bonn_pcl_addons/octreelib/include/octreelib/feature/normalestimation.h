@@ -105,10 +105,10 @@ namespace feature
 
 	
 	template<typename CoordType, typename ValueType, typename PointType> 
-	boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > buildNormalEstimationOctree( const pcl::PointCloud<PointType>& cloud, const std::vector< int >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType >* allocator = NULL );
+	boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > buildNormalEstimationOctree( const pcl::PointCloud<PointType>& cloud, const std::vector< int >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator );
 
 	template<typename CoordType, typename ValueType, typename PointType> 
-	boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > buildNormalEstimationOctree( const boost::shared_ptr< const pcl::PointCloud<PointType> >& cloud, const boost::shared_ptr< const std::vector< int > >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType >* allocator = NULL );
+	boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > buildNormalEstimationOctree( const boost::shared_ptr< const pcl::PointCloud<PointType> >& cloud, const boost::shared_ptr< const std::vector< int > >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator );
 	
 	template<typename CoordType, typename ValueType>
 	bool calculateNormal( spatialaggregate::OcTreeNode<CoordType, ValueType>* treenode, Eigen::Vector3f& normal, int minimumPointsForNormal );
