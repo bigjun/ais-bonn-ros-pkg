@@ -648,6 +648,11 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		leaf->setDimensionsForParentOctant( octant ); // to set min max positions
 		leaf->depth = parentNode->depth + 1;
 
+//		if( (leaf->maxPosition[0] - leaf->minPosition[0]) - minimumVolumeSize < -std::numeric_limits<CoordType>::epsilon() ) {
+//			std::cout << (leaf->maxPosition[0] - leaf->minPosition[0]) << " " << minimumVolumeSize << "\n";
+//			assert(false);
+//		}
+
 		parentNode->siblings[octant] = leaf;
 
 		return leaf;
@@ -659,8 +664,8 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf = currNode;// ((spatialaggregate::OcTreeBranchingNode< CoordType, ValueType >*) parentNode)->siblings[octant]);
 
 
-		// check if old leaf covers less than double the minimumVolumeSize
-		if( (oldLeaf->maxPosition[0] - oldLeaf->minPosition[0]) - (minimumVolumeSize + minimumVolumeSize) <= -std::numeric_limits<CoordType>::epsilon() ) {
+		// check if old leaf reached minimumVolumeSize
+		if( (oldLeaf->maxPosition[0] - oldLeaf->minPosition[0]) < minimumVolumeSize + minimumVolumeSize - std::numeric_limits<CoordType>::epsilon() ) {
 
 			// dont split!
 			// TODO: average point position?
@@ -685,13 +690,13 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		branch->depth = parentNode->depth + 1;
 
 		// initialize closest position
-		CoordType dx = branch->position[0] - oldLeaf->position[0];
-		CoordType dy = branch->position[1] - oldLeaf->position[1];
-		CoordType dz = branch->position[2] - oldLeaf->position[2];
+		CoordType dx = branch->position[0] - oldLeaf->closestPosition[0];
+		CoordType dy = branch->position[1] - oldLeaf->closestPosition[1];
+		CoordType dz = branch->position[2] - oldLeaf->closestPosition[2];
 
-		branch->closestPosition[0] = oldLeaf->position[0];
-		branch->closestPosition[1] = oldLeaf->position[1];
-		branch->closestPosition[2] = oldLeaf->position[2];
+		branch->closestPosition[0] = oldLeaf->closestPosition[0];
+		branch->closestPosition[1] = oldLeaf->closestPosition[1];
+		branch->closestPosition[2] = oldLeaf->closestPosition[2];
 		branch->closestPositionDistance = dx*dx+dy*dy+dz*dz;
 
 		parentNode->siblings[octant] = branch;
@@ -699,8 +704,12 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		// link old leaf to branching node
 		branch->value = oldLeaf->value;
 		branch->numPoints = oldLeaf->numPoints;
-		branch->siblings[ branch->getOctant( oldLeaf->position ) ] = oldLeaf;
+		int oldLeafOctant = branch->getOctant( oldLeaf->position );
+		branch->siblings[ oldLeafOctant ] = oldLeaf;
 		oldLeaf->parent = branch;
+		oldLeaf->setDimensionsForParentOctant( oldLeafOctant );
+		oldLeaf->position = (oldLeaf->minPosition + oldLeaf->maxPosition) * 0.5f;
+		oldLeaf->depth = branch->depth + 1;
 
 		return branch->addPoint( point, minimumVolumeSize ); // this could return some older leaf
 
