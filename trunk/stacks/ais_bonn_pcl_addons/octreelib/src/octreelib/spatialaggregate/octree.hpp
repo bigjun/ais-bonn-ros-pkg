@@ -847,7 +847,8 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		return this;
 	else {
 
-		if( (this->maxPosition[0] - this->minPosition[0]) - minimumSearchVolumeSize <= -std::numeric_limits<CoordType>::epsilon() )
+		// too small on next layer?
+		if( (this->maxPosition[0] - this->minPosition[0]) <= minimumSearchVolumeSize + minimumSearchVolumeSize - std::numeric_limits<CoordType>::epsilon() )
 			return this;
 
 		spatialaggregate::OcTreeNode< CoordType, ValueType >* n = siblings[ getOctant(position) ];
