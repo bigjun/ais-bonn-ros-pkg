@@ -39,7 +39,7 @@
 #define __DOWNSAMPLE_OCTREE_H__
 
 #include <map>
-#include <vector>
+#include <list>
 
 #include <octreelib/spatialaggregate/octree.h>
 
@@ -47,16 +47,58 @@
 namespace algorithm {
 	
 	template< typename CoordType, typename ValueType >
-	class OcTreeSamplingMap : public std::map< unsigned int, std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > {
+	class OcTreeSamplingMap : public std::map< unsigned int, std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > {
 	public:
 		OcTreeSamplingMap() {}
 		~OcTreeSamplingMap() {}
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	};
-	
+
 	// downToDepth: include a leaf at depth in lists from 0 to depth
 	template< typename CoordType, typename ValueType >
-	OcTreeSamplingMap< CoordType, ValueType > downsampleOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0, unsigned int numPoints = 0 );
-	
+	OcTreeSamplingMap< CoordType, ValueType > downsampleOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0 ) {
+
+		algorithm::OcTreeSamplingMap< CoordType, ValueType > samplingMap;
+
+		std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > openList;
+		openList.push_back( tree.root_ );
+
+		while( !openList.empty() ) {
+
+			spatialaggregate::OcTreeNode< CoordType, ValueType >* node = openList.front();
+
+			if( node->type_ == spatialaggregate::OCTREE_BRANCHING_NODE ) {
+
+				samplingMap[ node->depth_ ].push_back( node );
+
+				for( unsigned int i = 0; i < 8; i++ ) {
+					if( node->children_[i] )
+						openList.push_back( node->children_[i] );
+				}
+
+			}
+			else {
+
+				// handle leaf node
+
+				if( downToMaxDepth ) {
+					for( int i = node->depth_; i <= maxDepth; i++ )
+						samplingMap[ i ].push_back( node );
+				}
+				else
+					samplingMap[ node->depth_ ].push_back( node );
+
+			}
+
+			openList.pop_front();
+
+		}
+
+		return samplingMap;
+
+	}
 };
 
 #include <octreelib/algorithm/downsample.hpp>

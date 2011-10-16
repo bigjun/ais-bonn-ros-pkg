@@ -38,13 +38,8 @@
 
 template<typename CoordType, typename ValueType, typename PointType>
 boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::buildNormalEstimationOctree( const pcl::PointCloud<PointType>& cloud, const std::vector< int >& indices, int& octreeDepth, algorithm::OcTreeSamplingMap<CoordType, ValueType>& octreeSamplingMap, CoordType maxRange, CoordType minResolution, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
-
-	spatialaggregate::OcTreePosition< CoordType > center;
-	center[0] = 0;
-	center[1] = 0;
-	center[2] = 0;
 	
-	boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > octree = boost::make_shared< spatialaggregate::OcTree<CoordType, ValueType> >( center, minResolution, maxRange, allocator );
+	boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > octree = boost::make_shared< spatialaggregate::OcTree<CoordType, ValueType> >( Eigen::Matrix< float, 4, 1 >( 0.f, 0.f, 0.f ), minResolution, maxRange, allocator );
 
 	octreeDepth = 0;
 
@@ -56,8 +51,6 @@ boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::bui
 		const float z = p.z;
 
 		
-		spatialaggregate::OcTreePoint<CoordType, ValueType > point;
-
 		if( isnan(x) || isinf(x) )
 			continue;
 
@@ -66,31 +59,26 @@ boost::shared_ptr< spatialaggregate::OcTree<CoordType, ValueType> > feature::bui
 
 		if( isnan(z) || isinf(z) )
 			continue;	
-
-		point.position[0] = x;
-		point.position[1] = y;
-		point.position[2] = z;
 		
-		point.value.summedSquares(0, 0) = x*x;
-		point.value.summedSquares(0, 1) = point.value.summedSquares(1, 0) = x*y;
-		point.value.summedSquares(0, 2) = point.value.summedSquares(2, 0) = x*z;
-		point.value.summedSquares(1, 1) = y*y;
-		point.value.summedSquares(1, 2) = point.value.summedSquares(2, 1) = y*z;
-		point.value.summedSquares(2, 2) = z*z;
+		ValueType value;
+		value.summedSquares(0, 0) = x*x;
+		value.summedSquares(0, 1) = value.summedSquares(1, 0) = x*y;
+		value.summedSquares(0, 2) = value.summedSquares(2, 0) = x*z;
+		value.summedSquares(1, 1) = y*y;
+		value.summedSquares(1, 2) = value.summedSquares(2, 1) = y*z;
+		value.summedSquares(2, 2) = z*z;
 
-		point.value.summedPos(0) = x;
-		point.value.summedPos(1) = y;
-		point.value.summedPos(2) = z;
-		point.value.pointCloudIndex = indices[i];
+		value.summedPos(0) = x;
+		value.summedPos(1) = y;
+		value.summedPos(2) = z;
+		value.pointCloudIndex = indices[i];
 
-		spatialaggregate::OcTreeNode<CoordType, ValueType>* n = octree->addPoint(point);
+//		spatialaggregate::OcTreeNode<CoordType, ValueType>* n = octree->addPoint( p.getVectorMap4f(),  );
 
-		if (n->depth > (unsigned int)octreeDepth)
-			octreeDepth = n->depth;
 	}
 
 	octreeSamplingMap.clear();
-	octreeSamplingMap = algorithm::downsampleOcTree(*octree, false, octreeDepth, cloud.points.size());
+	octreeSamplingMap = algorithm::downsampleOcTree(*octree, false, octree->max_depth_, cloud.points.size());
 	
 	return octree;
 	
