@@ -38,6 +38,7 @@
 #ifndef __SPATIALAGGREGATE_OCTREE_H__
 #define __SPATIALAGGREGATE_OCTREE_H__
 
+#include <list>
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
@@ -49,9 +50,16 @@
 
 #include <ostream>
 
+#include <stdint.h>
+
+#define MAX_REPRESENTABLE_DEPTH 16
+
+
+
 namespace spatialaggregate {
 	
 	template< typename CoordType, typename ValueType > class OcTreeNodeAllocator;
+	template< typename CoordType, typename ValueType > class OcTree;
 	
 	enum OcTreeNodeType {
 		OCTREE_LEAF_NODE,
@@ -59,115 +67,123 @@ namespace spatialaggregate {
 		NUM_OCTREE_NODE_TYPES,
 	};
 	
-	//! position in the octree with templated coordinate type and some operator overloads
-	template< typename CoordType >
-	class OcTreePosition {
+	
+	template< class T >
+	class DynamicAllocator {
 	public:
-		OcTreePosition() {}
-		~OcTreePosition() {}
-		
-		CoordType& operator[](const int rhs) {
-			return p[rhs];
+
+		DynamicAllocator( int block_size ) {
+
+			block_size_ = block_size;
+			pool_.push_back( std::vector< T, Eigen::aligned_allocator< T > >( block_size_ ) );
+			curr_block_ = 0;
+			curr_block_idx_ = 0;
+
 		}
 
-		const CoordType& operator[](const int rhs) const {
-			return p[rhs];
-		}
-		
-		OcTreePosition& operator*=(const double &rhs) {
-			p[0] *= rhs;
-			p[1] *= rhs;
-			p[2] *= rhs;
-			return *this;
-		}
-		
-		OcTreePosition& operator*=(const float &rhs) {
-			p[0] *= rhs;
-			p[1] *= rhs;
-			p[2] *= rhs;
-			return *this;
-		}
-		
-		OcTreePosition& operator*=(const int &rhs) {
-			p[0] *= rhs;
-			p[1] *= rhs;
-			p[2] *= rhs;
-			return *this;
-		}
-		
-		const OcTreePosition operator*(const double &rhs) const {
-			OcTreePosition r = *this;
-			r.p[0] *= rhs;
-			r.p[1] *= rhs;
-			r.p[2] *= rhs;
-			return r;
-		}
-		
-		const OcTreePosition operator*(const float &rhs) const {
-			OcTreePosition r = *this;
-			r.p[0] *= rhs;
-			r.p[1] *= rhs;
-			r.p[2] *= rhs;
-			return r;
+		~DynamicAllocator() {
 		}
 
-		const OcTreePosition operator*(const int &rhs) const {
-			OcTreePosition r = *this;
-			r.p[0] *= rhs;
-			r.p[1] *= rhs;
-			r.p[2] *= rhs;
-			return r;
+		T* allocate() {
+
+			T* retval = &pool_[curr_block_][curr_block_idx_];
+
+			curr_block_idx_++;
+			if( curr_block_idx_ >= block_size_ ) {
+				pool_.push_back( std::vector< T, Eigen::aligned_allocator< T > >( block_size_ ) );
+				curr_block_++;
+				curr_block_idx_ = 0;
+			}
+
+			return retval;
+
 		}
-		
-		
-		OcTreePosition& operator+=(const OcTreePosition &rhs) {
-			p[0] += rhs.p[0];
-			p[1] += rhs.p[1];
-			p[2] += rhs.p[2];
-			return *this;
+
+		void reset() {
+			curr_block_ = 0;
+			curr_block_idx_ = 0;
 		}
-		
-		OcTreePosition& operator-=(const OcTreePosition &rhs) {
-			p[0] -= rhs.p[0];
-			p[1] -= rhs.p[1];
-			p[2] -= rhs.p[2];
-			return *this;
-		}
-		
-		const OcTreePosition operator+(const OcTreePosition &rhs) const {
-			OcTreePosition r = *this;
-			r += rhs;
-			return r;
-		}
-		
-		const OcTreePosition operator-(const OcTreePosition &rhs) const {
-			OcTreePosition r = *this;
-			r -= rhs;
-			return r;
-		}
-		
-		bool operator==(const OcTreePosition &rhs) {
-			if( p[0] == rhs.p[0] && p[1] == rhs.p[1] && p[2] == rhs.p[2] )
-				return true;
-			else
-				return false;
-		}
-		
-		CoordType p[3];
-		
+
+		std::vector< std::vector< T, Eigen::aligned_allocator< T > > > pool_;
+		int block_size_;
+		int curr_block_, curr_block_idx_;
+
 	};
-	
-	
-	//! point in the octree with templated position and value
+
+
+	//! point in the octree with templated position and value type
 	template< typename CoordType, typename ValueType >
-	class OcTreePoint {
+	class OcTreeKey {
 	public:
-		OcTreePoint() {}
-		OcTreePoint( const OcTreePosition< CoordType >& pos, const ValueType& v ) { position = pos; value = v; }
-		~OcTreePoint() {}
-		
-		OcTreePosition< CoordType > position;
-		ValueType value;
+
+		OcTreeKey() {}
+
+		OcTreeKey( const CoordType& x, const CoordType& y, const CoordType& z, OcTree< CoordType, ValueType >* tree ) {
+			setKey( x, y, z, tree );
+		}
+		OcTreeKey( const Eigen::Matrix< CoordType, 4, 1 >& position, OcTree< CoordType, ValueType >* tree ) {
+			setKey( position(0), position(1), position(2), tree );
+		}
+
+		~OcTreeKey() {}
+
+		inline void setKey( const CoordType& x, const CoordType& y, const CoordType& z, OcTree< CoordType, ValueType >* tree ) {
+			return setKey( Eigen::Matrix< CoordType, 4, 1 >( x, y, z, 1.0 ), tree );
+		}
+
+		inline void setKey( const Eigen::Matrix< CoordType, 4, 1 >& position, OcTree< CoordType, ValueType >* tree );
+
+
+		inline bool operator==(const OcTreeKey &rhs) {
+			return x_ == rhs.x_ && y_ == rhs.y_ && z_ == rhs.z_;
+		}
+
+
+//		inline uint64_t getKey( const CoordType& x, const CoordType& y, const CoordType& z, OcTree< CoordType, ValueType >* tree ) {
+//			return getKey( Eigen::Matrix< CoordType, 4, 1 >( x, y, z, 1.0 ), tree );
+//		}
+//
+//		inline uint64_t getKey( const Eigen::Matrix< CoordType, 4, 1 >& position, OcTree< CoordType, ValueType >* tree );
+//
+//
+//		inline bool operator==(const OcTreeKey &rhs) {
+//			return key_ == rhs.key_;
+//		}
+//
+//		inline bool operator<=(const OcTreeKey &rhs) {
+//			return key_ <= rhs.key_;
+//		}
+//
+//		inline bool operator>=(const OcTreeKey &rhs) {
+//			return key_ >= rhs.key_;
+//		}
+//
+//		inline bool operator<(const OcTreeKey &rhs) {
+//			return key_ < rhs.key_;
+//		}
+//
+//		inline bool operator>(const OcTreeKey &rhs) {
+//			return key_ > rhs.key_;
+//		}
+
+//		inline void setKey( uint64_t key ) {
+//			key_ = key;
+//			decodeMorton48( key_, x_, y_, z_ );
+//		}
+
+		inline uint64_t dilate1By2( uint64_t x );
+		inline uint64_t reduce1By2( uint64_t x );
+		inline uint64_t encodeMorton48( uint64_t x, uint64_t y, uint64_t z );
+		inline void decodeMorton48( uint64_t key, uint64_t& x, uint64_t& y, uint64_t& z );
+
+		inline Eigen::Matrix< CoordType, 4, 1 > getPosition( OcTree< CoordType, ValueType >* tree ) const;
+
+//		uint64_t key_;
+		uint32_t x_, y_, z_;
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
 	};
 	
 	
@@ -179,103 +195,112 @@ namespace spatialaggregate {
 	public:
 
 		OcTreeNode() { 
-			this->type = NUM_OCTREE_NODE_TYPES;
+			this->type_ = NUM_OCTREE_NODE_TYPES;
 			initialize();
 		}
 		
 		OcTreeNode( OcTreeNodeType type ) { 
-			this->type = type;
+			this->type_ = type;
 			initialize();
 		}
 
-		OcTreeNode( OcTreeNodeType type, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
-			this->type = type;
-			this->allocator = allocator;
+		OcTreeNode( OcTreeNodeType type, boost::shared_ptr< OcTree< CoordType, ValueType > > tree ) {
+			this->type_ = type;
+			this->tree_ = tree;
 			initialize();
 		}
 		
 		void initialize() {
-			for( unsigned int i = 0; i < 8; i++ )
-				siblings[i] = NULL;
-			depth = 0;
-			numPoints = 0;
-			value = (ValueType) 0;
-			closestPositionDistance = std::numeric_limits< CoordType >::max();
+			tree_ = NULL;
+			parent_ = NULL;
+			memset( children_, 0, sizeof( children_ ) );
+			depth_ = 0;
+			value_ = ValueType();
 		}
 		
+		void initialize( OcTreeNode* node ) {
+			tree_ = node->tree_;
+			parent_ = node->parent_;
+			depth_ = node->depth_;
+			value_ = node->value_;
+			type_ = node->type_;
+
+			min_key_ = node->min_key_;
+			max_key_ = node->max_key_;
+			pos_key_ = node->pos_key_;
+			center_key_ = node->center_key_;
+
+			memcpy( children_, node->children_, sizeof( children_ ) );
+
+		}
+
+		inline void initialize( OcTreeNodeType type, const OcTreeKey< CoordType, ValueType >& key, const ValueType& value, int depth, OcTreeNode< CoordType, ValueType >* parent, OcTree< CoordType, ValueType >* tree );
+
+
 		~OcTreeNode() {
 			for( unsigned int i = 0; i < 8; i++ ) {
-				if( siblings[i] ) {
-					allocator->deallocate( siblings[i] );
-					siblings[i] = NULL;
+				if( children_[i] ) {
+					tree_->allocator_->deallocateNode( children_[i] );
+					children_[i] = NULL;
 				}
 			}
 		}
 		
 
-		OcTreeNodeType type;
+		inline CoordType resolution();
 
-		OcTreeNode* parent;
-		OcTreeNode< CoordType, ValueType >* siblings[8];
+		inline Eigen::Matrix< CoordType, 4, 1 > getPosition() const {
+			return center_key_.getPosition( tree_ );
+		}
+
+		OcTreeNodeType type_;
+
+		OcTree< CoordType, ValueType >* tree_;
+		OcTreeNode< CoordType, ValueType >* parent_;
+		OcTreeNode< CoordType, ValueType >* children_[8];
 		
-		boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator;
+		OcTreeKey< CoordType, ValueType > pos_key_, center_key_, min_key_, max_key_;
 		
-		// dimensions of the space covered by this node
-		OcTreePosition< CoordType > position; // center position
-		OcTreePosition< CoordType > closestPosition; // closest point to center in a branching node, else just the position for a leaf
-		CoordType closestPositionDistance;
-		OcTreePosition< CoordType > minPosition;
-		OcTreePosition< CoordType > maxPosition;
-		unsigned int depth;
-		ValueType value;
-		unsigned int numPoints;
+		int depth_;
+		ValueType value_;
 		
-		
+
 		//! position in my region?
-		inline bool inRegion( const OcTreePosition< CoordType >& position );
+		inline bool inRegion( const OcTreeKey< CoordType, ValueType >& position );
 		
 		//! my center in given region?
-		inline bool inRegion( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition );
+		inline bool inRegion( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition );
 		
-		inline bool overlap( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition );
+		inline bool overlap( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition );
 		
-		inline bool containedInRegion( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition );
+		inline bool containedInRegion( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition );
 		
-		inline bool regionContained( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition );
+		inline bool regionContained( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition );
 		
-		inline unsigned int getOctant( const OcTreePosition< CoordType >& position );
+		inline unsigned int getOctant( const OcTreeKey< CoordType, ValueType >& position );
 		
-		inline void setDimensionsForParentOctant( unsigned int octant );
+		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth );
 		
-		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize );
-//		inline OcTreeNode< CoordType, ValueType >* addPoint( OcTreeNode< CoordType, ValueType >* leaf, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
-//		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point, CoordType minimumVolumeSize, bool (*splitCriterion)( spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf, spatialaggregate::OcTreeNode< CoordType, ValueType >* newLeaf ) = NULL );
-		
-		inline void getPointsInVolume( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
-		
-		inline void getAllNodesInVolume( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
+		inline void getAllLeaves( std::list< OcTreeNode< CoordType, ValueType >* >& nodes );
 
-		inline void getAllNodesInVolumeOnSamplingDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, int searchDepth, bool higherDepthLeaves, int maxDepth );
+		inline void getAllLeavesInVolume( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 
-		inline ValueType getValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
+		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool lowerDepthLeaves );
+
+		inline ValueType getValueInVolume( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 		
-		inline void getValueAndCountInVolume( ValueType& value, unsigned int& count, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
-		
-		inline void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
-		
-		inline OcTreeNode< CoordType, ValueType >* getTightestNode( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize );
-		
-		inline void collectNodesInDepthRange( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, unsigned int minDepth, unsigned int maxDepth );
+		inline void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 		
 		// sweeps up the tree and applies the given function on parent node and this node
 		inline void sweepUp( void* data, void (*f)( OcTreeNode< CoordType, ValueType >* current, OcTreeNode< CoordType, ValueType >* next, void* data ) );
 		
 		inline void sweepDown( void* data, void (*f)( OcTreeNode< CoordType, ValueType >* current, OcTreeNode< CoordType, ValueType >* next, void* data ) );
 		
-		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const OcTreePosition< CoordType >& position, CoordType minimumSearchVolumeSize );
+		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const OcTreeKey< CoordType, ValueType >& position, int maxDepth );
 
 
-   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
 	};
 	
@@ -288,18 +313,16 @@ namespace spatialaggregate {
 	public:
 		
 		OcTreeNodeAllocator() {}
-		virtual ~OcTreeNodeAllocator() { std::cout << "deleting allocator\n"; }
+		virtual ~OcTreeNodeAllocator() {}
 		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocateLeafNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_LEAF_NODE, boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this() ); }
-		inline virtual void deallocateLeafNode( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
-		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { return new OcTreeNode< CoordType, ValueType >( OCTREE_BRANCHING_NODE, boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this() ); }
-		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
-		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocate() { return new OcTreeNode< CoordType, ValueType >(); }
-		inline virtual void deallocate( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
+		inline virtual OcTreeNode< CoordType, ValueType >* allocateNode() { return new OcTreeNode< CoordType, ValueType >(); }
+		inline virtual void deallocateNode( OcTreeNode< CoordType, ValueType >* node ) { delete node; }
 		
 		inline virtual void reset() {}
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
 	};
 	
 	
@@ -311,67 +334,72 @@ namespace spatialaggregate {
 	public:
 		
 		OcTreeNodeFixedCountAllocator( unsigned int numPoints ) {
-			leafNodes = new OcTreeNode< CoordType, ValueType >[ numPoints+1 ];
-			for( currentLeafNode = &leafNodes[0]; currentLeafNode != &leafNodes[numPoints+1]; currentLeafNode++ ) {
-				currentLeafNode->type = OCTREE_LEAF_NODE;
-//				currentLeafNode->allocator = boost::enable_shared_from_this< OcTreeNodeFixedCountAllocator< CoordType, ValueType > >::shared_from_this();
-			}
-			branchingNodes = new OcTreeNode< CoordType, ValueType >[ 2*numPoints+1 ];
-			for( currentBranchingNode = &branchingNodes[0]; currentBranchingNode != &branchingNodes[2*numPoints+1]; currentBranchingNode++ ) {
-				currentBranchingNode->type = OCTREE_BRANCHING_NODE;
-//				currentBranchingNode->allocator = boost::enable_shared_from_this< OcTreeNodeFixedCountAllocator< CoordType, ValueType > >::shared_from_this();
-			}
-			currentLeafNode = &leafNodes[0];
-			currentBranchingNode = &branchingNodes[0];
-			this->numPoints = numPoints;
+			const int numNodes = numPoints + (int)ceil(8.0*numPoints / 7.0);
+			nodes_ = new OcTreeNode< CoordType, ValueType >[ numNodes ];
+			current_node_ = &nodes_[0];
+			last_node_ = &nodes_[numNodes-1];
 		}
 		
 		virtual ~OcTreeNodeFixedCountAllocator() {
-			std::cout << "deleting fixed count allocator\n";
-			delete[] leafNodes;
-			delete[] branchingNodes;
+			delete[] nodes_;
 		}
 		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocateLeafNode() { 
-			currentLeafNode++;
-			currentLeafNode->allocator = boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this();
-			return currentLeafNode;
+		inline virtual OcTreeNode< CoordType, ValueType >* allocateNode() {
+			current_node_++;
+			assert( current_node_ != last_node_ );
+			return current_node_;
 		}
-		inline virtual void deallocateLeafNode( OcTreeNode< CoordType, ValueType >* node ) {}
-		
-		inline virtual OcTreeNode< CoordType, ValueType >* allocateBranchingNode() { 
-			currentBranchingNode++;
-			currentBranchingNode->allocator = boost::enable_shared_from_this< OcTreeNodeAllocator< CoordType, ValueType > >::shared_from_this();
-			return currentBranchingNode;
-		}
-		inline virtual void deallocateBranchingNode( OcTreeNode< CoordType, ValueType >* node ) {}
-		
-		// should not be used
-		inline virtual OcTreeNode< CoordType, ValueType >* allocate() { return allocateBranchingNode(); }
-
-		inline virtual void deallocate( OcTreeNode< CoordType, ValueType >* node ) {}
+		inline virtual void deallocateNode( OcTreeNode< CoordType, ValueType >* node ) {}
 		
 		inline virtual void reset() {
-			OcTreeNode< CoordType, ValueType >* lastLeafNode = currentLeafNode;
-			for( currentLeafNode = &leafNodes[0]; currentLeafNode != lastLeafNode; currentLeafNode++ )
-				currentLeafNode->initialize();
-
-			OcTreeNode< CoordType, ValueType >* lastBranchingNode = currentBranchingNode;
-			for( currentBranchingNode = &branchingNodes[0]; currentBranchingNode != lastBranchingNode; currentBranchingNode++ )
-				currentBranchingNode->initialize();
-			
-			currentLeafNode = &leafNodes[0];
-			currentBranchingNode = &branchingNodes[0];
+			OcTreeNode< CoordType, ValueType >* lastNode = current_node_;
+			for( current_node_ = &nodes_[0]; current_node_ != lastNode; current_node_++ )
+				current_node_->initialize();
+			current_node_ = &nodes_[0];
 		}
 		
-		OcTreeNode< CoordType, ValueType >* leafNodes;
-		OcTreeNode< CoordType, ValueType >* branchingNodes;
-		OcTreeNode< CoordType, ValueType >* currentLeafNode;
-		OcTreeNode< CoordType, ValueType >* currentBranchingNode;
-		unsigned int numPoints;
+		OcTreeNode< CoordType, ValueType >* nodes_;
+		OcTreeNode< CoordType, ValueType >* current_node_;
+		OcTreeNode< CoordType, ValueType >* last_node_;
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
 	};
 
 	
+	/** \brief dynamic allocator, allocates memory in chunks
+	 *
+	 */
+	template< typename CoordType, typename ValueType >
+	class OcTreeNodeDynamicAllocator : public OcTreeNodeAllocator< CoordType, ValueType > {
+	public:
+
+		OcTreeNodeDynamicAllocator( unsigned int block_size )
+		: alloc_( block_size ) {
+		}
+
+		virtual ~OcTreeNodeDynamicAllocator() {
+		}
+
+		inline virtual OcTreeNode< CoordType, ValueType >* allocateNode() {
+			return alloc_.allocate();
+		}
+
+		inline virtual void deallocateNode( OcTreeNode< CoordType, ValueType >* node ) {}
+
+		inline virtual void reset() {
+			alloc_.reset();
+		}
+
+		DynamicAllocator< OcTreeNode< CoordType, ValueType > > alloc_;
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+
+	};
+
+
 	/** \brief the octree class with some convenient constructors
 	 *
 	 */
@@ -379,48 +407,70 @@ namespace spatialaggregate {
 	class OcTree {
 	public:
 		
-//		OcTree( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize );
-		OcTree( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator = boost::make_shared< OcTreeNodeAllocator< CoordType, ValueType > >() );
-		
-		//! creates a tree in which the node sizes are multiples of minimumVolumeSize with sufficient depth levels to capture points in maxDistance radius around center
-//		OcTree( const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, CoordType maxDistance );
-		OcTree( const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize, CoordType maxDistance, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator = boost::make_shared< OcTreeNodeAllocator< CoordType, ValueType > >() );
+		//! creates a tree in which the node sizes are multiples of minimumVolumeSize with maximal depth levels around center
+		OcTree( const Eigen::Matrix< CoordType, 4, 1 >& center, CoordType minimumVolumeSize, CoordType maxDistance, boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator = boost::make_shared< OcTreeNodeAllocator< CoordType, ValueType > >() );
 		
 		~OcTree();
 		
-		inline void initialize( const OcTreePosition< CoordType >& dimensions, const OcTreePosition< CoordType >& center, CoordType minimumVolumeSize );
+		inline void initialize( const Eigen::Matrix< CoordType, 4, 1 >& dimensions, const Eigen::Matrix< CoordType, 4, 1 >& center, CoordType minimumVolumeSize );
 		
-		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreePoint< CoordType, ValueType >& point );
-		
-		inline OcTreeNode< CoordType, ValueType >* getClosestPoint( const OcTreePosition< CoordType >& position );
-		
-		// complete tree
-		inline std::vector< OcTreeNode< CoordType, ValueType >* > getPointsInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
-		
-		inline std::vector< OcTreeNode< CoordType, ValueType >* > getAllNodesInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
+		inline OcTreeNode< CoordType, ValueType >* addPoint( const CoordType& x, const CoordType& y, const CoordType& z, const ValueType& value, int maxDepth ) {
+			return root_->addPoint( getKey( x, y, z ), value, maxDepth );
+		}
 
-		// complete tree
-		inline ValueType getValueInVolume( const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
-		
-		// complete tree
-		inline void getValueAndCountInVolume( ValueType& value, unsigned int& count, const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
-		
-		inline void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreePosition< CoordType >& minPosition, const OcTreePosition< CoordType >& maxPosition, CoordType minimumSearchVolumeSize = 0 );
-		
-		
-		OcTreeNode< CoordType, ValueType >* root;
-		
-		CoordType minimumVolumeSize; 
-		
-		boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator;
+		inline OcTreeNode< CoordType, ValueType >* addPoint( const Eigen::Matrix< CoordType, 4, 1 >& position, const ValueType& value, int maxDepth ) {
+			return root_->addPoint( getKey( position(0), position(1), position(2) ), value, maxDepth );
+		}
 
+		inline OcTreeKey< CoordType, ValueType > getKey( const CoordType& x, const CoordType& y, const CoordType& z ) {
+			return OcTreeKey< CoordType, ValueType >( x, y, z, this );
+		}
+
+		inline OcTreeKey< CoordType, ValueType > getKey( const Eigen::Matrix< CoordType, 4, 1 >& position ) {
+			return OcTreeKey< CoordType, ValueType >( position(0), position(1), position(2), this );
+		}
+		
+		inline double depthForVolumeSize( CoordType volumeSize ) {
+			return std::min( (double)max_depth_, std::max( 0.0, (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_ ) );
+		}
+
+		inline CoordType volumeSizeForDepth( int depth ) {
+			return resolutions_[depth];
+		}
+
+		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
+			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, lowerDepthLeaves );
+		}
+
+		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const Eigen::Matrix< CoordType, 4, 1 >& position, int maxDepth ) {
+			return root_->findRepresentative( getKey( position ), maxDepth );
+		}
+
+		OcTreeNode< CoordType, ValueType >* root_;
+		
+		CoordType minimum_volume_size_;
+		double log_minimum_volume_size_;
+		double log2_inv_;
+		int max_depth_;
+		float resolutions_[MAX_REPRESENTABLE_DEPTH+1];
+		uint32_t depth_masks_[MAX_REPRESENTABLE_DEPTH+1];
+		uint32_t minmasks_[MAX_REPRESENTABLE_DEPTH+1];
+		uint32_t maxmasks_[MAX_REPRESENTABLE_DEPTH+1];
+		
+		// required to generate keys
+		Eigen::Matrix< CoordType, 4, 1 > min_position_, position_normalizer_;
+
+		boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator_;
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 	};
-
-
 
 };
 
+
 #include <octreelib/spatialaggregate/octree.hpp>
+
 
 #endif //__SPATIALAGGREGATE_OCTREE_H__
 

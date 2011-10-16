@@ -40,48 +40,48 @@
 #include <list>
 
 
-template< typename CoordType, typename ValueType >
-algorithm::OcTreeSamplingMap< CoordType, ValueType > algorithm::downsampleOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth, unsigned int maxDepth, unsigned int numPoints  ) {
-	
-	algorithm::OcTreeSamplingMap< CoordType, ValueType > samplingMap;
-	
-	for( unsigned int i = 0; i <= maxDepth; i++ )
-		samplingMap[i].reserve( numPoints );
-	
-	std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > openList;
-	openList.push_back( tree.root );
-	
-	while( !openList.empty() ) {
-		
-		spatialaggregate::OcTreeNode< CoordType, ValueType >* node = openList.front();
-		
-		if( node->type == spatialaggregate::OCTREE_BRANCHING_NODE ) {
-			
-			samplingMap[ node->depth ].push_back( node );
-		
-			for( unsigned int i = 0; i < 8; i++ ) {
-				if( node->siblings[i] )
-					openList.push_back( node->siblings[i] );
-			}
-			
-		}
-		else {
-			
-			// handle leaf node
-			
-			if( downToMaxDepth ) {
-				for( unsigned int i = node->depth; i <= maxDepth; i++ )
-					samplingMap[ i ].push_back( node );
-			}
-			else
-				samplingMap[ node->depth ].push_back( node );
-			
-		}
-		
-		openList.pop_front();
-		
-	}
-	
-	return samplingMap;
-	
-}
+//template< typename CoordType, typename ValueType >
+//algorithm::OcTreeSamplingMap< CoordType, ValueType > algorithm::downsampleOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth, int maxDepth, unsigned int numPoints ) {
+//
+//	algorithm::OcTreeSamplingMap< CoordType, ValueType > samplingMap;
+//
+//	for( unsigned int i = 0; i <= maxDepth; i++ )
+//		samplingMap[i].reserve( numPoints );
+//
+//	std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > openList;
+//	openList.push_back( tree.root_ );
+//
+//	while( !openList.empty() ) {
+//
+//		spatialaggregate::OcTreeNode< CoordType, ValueType >* node = openList.front();
+//
+//		if( node->type == spatialaggregate::OCTREE_BRANCHING_NODE ) {
+//
+//			samplingMap[ node->depth_ ].push_back( node );
+//
+//			for( unsigned int i = 0; i < 8; i++ ) {
+//				if( node->children_[i] )
+//					openList.push_back( node->children_[i] );
+//			}
+//
+//		}
+//		else {
+//
+//			// handle leaf node
+//
+//			if( downToMaxDepth ) {
+//				for( int i = node->depth_; i <= maxDepth; i++ )
+//					samplingMap[ i ].push_back( node );
+//			}
+//			else
+//				samplingMap[ node->depth_ ].push_back( node );
+//
+//		}
+//
+//		openList.pop_front();
+//
+//	}
+//
+//	return samplingMap;
+//
+//}
