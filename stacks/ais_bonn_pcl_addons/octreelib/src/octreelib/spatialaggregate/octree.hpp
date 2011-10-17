@@ -407,43 +407,31 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::initialize( Oc
 	depth_ = depth;
 	parent_ = parent;
 	tree_ = tree;
+	pos_key_ = key;
 
 	const uint32_t minmask = tree_->minmasks_[depth_];
 	const uint32_t maxmask = tree_->maxmasks_[depth_];
 
-	min_key_.x_ = key.x_ & minmask;
-	min_key_.y_ = key.y_ & minmask;
-	min_key_.z_ = key.z_ & minmask;
+	min_key_.x_ = pos_key_.x_ & minmask;
+	min_key_.y_ = pos_key_.y_ & minmask;
+	min_key_.z_ = pos_key_.z_ & minmask;
 
-	max_key_.x_ = key.x_ | maxmask;
-	max_key_.y_ = key.y_ | maxmask;
-	max_key_.z_ = key.z_ | maxmask;
+	max_key_.x_ = pos_key_.x_ | maxmask;
+	max_key_.y_ = pos_key_.y_ | maxmask;
+	max_key_.z_ = pos_key_.z_ | maxmask;
 
-	pos_key_ = key;
+	memset( children_, 0, sizeof( children_ ) );
+	memset( neighbors_, 0, sizeof( neighbors_ ) );
+}
+
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getCenterKey( OcTreeKey< CoordType, ValueType >& center_key ) {
 
 	const uint32_t center_diff =  (max_key_.x_ - min_key_.x_) >> 1;
-	center_key_.x_ = min_key_.x_ + center_diff;
-	center_key_.y_ = min_key_.y_ + center_diff;
-	center_key_.z_ = min_key_.z_ + center_diff;
-
-
-
-
-
-
-//	min_key_.setKey( key.key_ & (0xFFFFFFFFFFFFFFFFLL << (3*(tree_->max_depth_ - depth_))) & tree_->max_depth_mask_ );
-//	max_key_.setKey( key.key_ | ((0x1LL << (3*(tree_->max_depth_ - depth_))) - 1LL) );
-//
-//	if( type == OCTREE_BRANCHING_NODE ) {
-//		// set key to center position in branching nodes
-//		if( depth_ < tree_->max_depth_ )
-//			key_.setKey( min_key_.key_ | (0x7LL << (3*(tree_->max_depth_ - depth_ - 1))) );
-//		else
-//			key_ = key;
-//	}
-//	else
-//		key_ = key; // this allows leaves to be adequately placed when the leaf is branched further
-
+	center_key.x_ = min_key_.x_ + center_diff;
+	center_key.y_ = min_key_.y_ + center_diff;
+	center_key.z_ = min_key_.z_ + center_diff;
 
 }
 
@@ -491,6 +479,8 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		parentNode->type_ = OCTREE_BRANCHING_NODE;
 		parentNode->children_[octant] = leaf;
 
+//		parentNode->finishBranch();
+
 		return leaf;
 
 	}
@@ -518,6 +508,8 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 			unsigned int oldLeafOctant = branch->getOctant( oldLeaf->pos_key_ );
 			branch->children_[ oldLeafOctant ] = oldLeaf;
 			oldLeaf->initialize( OCTREE_LEAF_NODE, oldLeaf->pos_key_, oldLeaf->value_, branch->depth_ + 1, branch, tree_ );
+
+//			branch->finishBranch();
 
 			return branch->addPoint( position, value, maxDepth ); // this could return some older leaf
 
@@ -555,16 +547,137 @@ template< typename CoordType, typename ValueType >
 inline CoordType spatialaggregate::OcTreeNode< CoordType, ValueType >::resolution() {
 
 	return tree_->volumeSizeForDepth( depth_ );
-//	return ((double)(max_key_.x_ - min_key_.x_)) / tree_->position_normalizer_(0);
+
+}
+
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::finishBranch() {
+
+	const uint32_t mask = tree_->depth_masks_[depth_];
+
+	for( unsigned int i = 0; i < 8; i++ ) {
+		if( !children_[i] ) {
+			children_[i] = tree_->allocator_->allocateNode();
+
+			OcTreeKey< CoordType, ValueType > key;
+
+			if( i & 0x4 ) // x set?
+				key.x_ = pos_key_.x_ | mask;
+			else
+				key.x_ = pos_key_.x_ & (~mask);
+
+			if( i & 0x2 ) // y set?
+				key.y_ = pos_key_.y_ | mask;
+			else
+				key.y_ = pos_key_.y_ & (~mask);
+
+			if( i & 0x1 ) // z set?
+				key.z_ = pos_key_.z_ | mask;
+			else
+				key.z_ = pos_key_.z_ & (~mask);
+
+			children_[i]->initialize( OCTREE_LEAF_NODE, key, 0, depth_+1, this, tree_ );
+		}
+	}
+
+}
+
+
+// TODO: precompute look-up tables ( 8 times (3x3x3) )
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::establishNeighbors() {
+
+	neighbors_[9+3+1] = this;
+
+	if( parent_ ) {
+
+		const uint32_t octant = parent_->getOctant(pos_key_);
+
+		for( unsigned int n = 0; n < 27; n++ ) {
+
+			// set pointers
+			spatialaggregate::OcTreeNode< CoordType, ValueType >* parentNeighbor = parent_->neighbors_[tree_->parent_neighbor_[octant][n]];
+			if( !parentNeighbor )
+				neighbors_[n] = NULL;
+			else {
+				neighbors_[n] = parentNeighbor->children_[tree_->neighbor_octant_[octant][n]];
+			}
+
+		}
+
+	}
+
+	for( unsigned int i = 0; i < 8; i++ ) {
+		if( children_[i] )
+			children_[i]->establishNeighbors();
+	}
+
+//	if( parent_ ) {
+//
+//		// local xyz-index of this node relative to its parent
+//		const uint32_t mask = tree_->depth_masks_[depth_-1];
+//		int32_t lx = !!(pos_key_.x_ & mask);
+//		int32_t ly = !!(pos_key_.y_ & mask);
+//		int32_t lz = !!(pos_key_.z_ & mask);
+//
+//		for( int dx = -1; dx <= 1; dx++ ) {
+//			for( int dy = -1; dy <= 1; dy++ ) {
+//				for( int dz = -1; dz <= 1; dz++ ) {
+//
+//					if( dx == 0 && dy == 0 && dz == 0 )
+//						continue;
+//
+//					int32_t nx = lx+dx;
+//					int32_t ny = ly+dy;
+//					int32_t nz = lz+dz;
+//
+//					int32_t px = 0;
+//					int32_t py = 0;
+//					int32_t pz = 0;
+//
+//					if( nx > 1 )
+//						px = 1, nx = 0;
+//					if( nx < 0 )
+//						px = -1, nx = 1;
+//
+//					if( ny > 1 )
+//						py = 1, ny = 0;
+//					if( ny < 0 )
+//						py = -1, ny = 1;
+//
+//					if( nz > 1 )
+//						pz = 1, nz = 0;
+//					if( nz < 0 )
+//						pz = -1, nz = 1;
+//
+//					int32_t noctant = (nx << 2) | (ny << 1) | nz;
+//
+//					// set pointers
+//					spatialaggregate::OcTreeNode< CoordType, ValueType >* parentNeighbor = parent_->neighbors_[px+1][py+1][pz+1];
+//					if( !parentNeighbor )
+//						neighbors_[dx+1][dy+1][dz+1] = NULL;
+//					else {
+//						neighbors_[dx+1][dy+1][dz+1] = parentNeighbor->children_[noctant];
+//					}
+//
+//				}
+//			}
+//		}
+//	}
+//
+//	for( unsigned int i = 0; i < 8; i++ ) {
+//		if( children_[i] )
+//			children_[i]->establishNeighbors();
+//	}
 
 }
 
 
 
-
 template< typename CoordType, typename ValueType >
 spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< CoordType, 4, 1 >& center, CoordType minimumVolumeSize, CoordType maxDistance, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
-	
+
 	allocator_ = allocator;
 
 	// determine dimensions with 2^k * minimumVolumeSize..
@@ -575,7 +688,7 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 
 	const CoordType minRepresentedVolumeSize = size * pow( 2.0, -MAX_REPRESENTABLE_DEPTH );
 //	const CoordType size = minimumVolumeSize * pow( 2.0, max_depth_ );
-	
+
 	min_position_(0) = -0.5*size;
 	min_position_(1) = -0.5*size;
 	min_position_(2) = -0.5*size;
@@ -589,9 +702,10 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 
 	ValueType value;
 	root_->initialize( OCTREE_BRANCHING_NODE, OcTreeKey< CoordType, ValueType >( center, this ), value, 0, NULL, this );
+//	root_->finishBranch();
 
 	minimum_volume_size_ = minimumVolumeSize;
-	
+
 	for( int i = 0; i <= max_depth_; i++ ) {
 		resolutions_[i] = minimum_volume_size_ * pow( 2.0, max_depth_ - i );
 		if( i < max_depth_ )
@@ -606,6 +720,49 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 
 	log_minimum_volume_size_ = log( minimumVolumeSize );
 	log2_inv_ = 1.0 / log( 2.0 );
+
+
+	// precompute neighborhood look-up tables ( 8 times 27, two tables of indices for parent neighbor and its child )
+	for( unsigned int i = 0; i < 8; i++ ) {
+
+		int32_t lx = !!(i & 4);
+		int32_t ly = !!(i & 2);
+		int32_t lz = !!(i & 1);
+
+		for( int dx = -1; dx <= 1; dx++ ) {
+			for( int dy = -1; dy <= 1; dy++ ) {
+				for( int dz = -1; dz <= 1; dz++ ) {
+
+					int32_t nx = lx+dx;
+					int32_t ny = ly+dy;
+					int32_t nz = lz+dz;
+
+					int32_t px = 0;
+					int32_t py = 0;
+					int32_t pz = 0;
+
+					if( nx > 1 )
+						px = 1, nx = 0;
+					if( nx < 0 )
+						px = -1, nx = 1;
+
+					if( ny > 1 )
+						py = 1, ny = 0;
+					if( ny < 0 )
+						py = -1, ny = 1;
+
+					if( nz > 1 )
+						pz = 1, nz = 0;
+					if( nz < 0 )
+						pz = -1, nz = 1;
+
+					neighbor_octant_[i][9*(dx+1)+3*(dy+1)+(dz+1)] = (nx << 2) | (ny << 1) | nz;
+					parent_neighbor_[i][9*(dx+1)+3*(dy+1)+(dz+1)] = 9*(px+1)+3*(py+1)+(pz+1);
+
+				}
+			}
+		}
+	}
 
 }
 

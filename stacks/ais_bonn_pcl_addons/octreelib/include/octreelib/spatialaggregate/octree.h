@@ -72,12 +72,15 @@ namespace spatialaggregate {
 	class DynamicAllocator {
 	public:
 
+		typedef typename std::list< std::vector< T, Eigen::aligned_allocator< T > > > Pool;
+		typedef typename std::list< std::vector< T, Eigen::aligned_allocator< T > > >::iterator PoolIterator;
+
 		DynamicAllocator( int block_size ) {
 
 			block_size_ = block_size;
 			pool_.push_back( std::vector< T, Eigen::aligned_allocator< T > >( block_size_ ) );
-			curr_block_ = 0;
-			curr_block_idx_ = 0;
+			pool_iterator_ = pool_.begin();
+			curr_idx_ = 0;
 
 		}
 
@@ -86,13 +89,16 @@ namespace spatialaggregate {
 
 		T* allocate() {
 
-			T* retval = &pool_[curr_block_][curr_block_idx_];
+			T* retval = &((*pool_iterator_)[curr_idx_]);
 
-			curr_block_idx_++;
-			if( curr_block_idx_ >= block_size_ ) {
-				pool_.push_back( std::vector< T, Eigen::aligned_allocator< T > >( block_size_ ) );
-				curr_block_++;
-				curr_block_idx_ = 0;
+			curr_idx_++;
+			if( curr_idx_ >= block_size_ ) {
+				PoolIterator nit = pool_iterator_;
+				nit++;
+				if( nit == pool_.end() )
+					pool_.push_back( std::vector< T, Eigen::aligned_allocator< T > >( block_size_ ) );
+				pool_iterator_++;
+				curr_idx_ = 0;
 			}
 
 			return retval;
@@ -100,13 +106,15 @@ namespace spatialaggregate {
 		}
 
 		void reset() {
-			curr_block_ = 0;
-			curr_block_idx_ = 0;
+			pool_iterator_ = pool_.begin();
+			curr_idx_ = 0;
 		}
 
-		std::vector< std::vector< T, Eigen::aligned_allocator< T > > > pool_;
+		Pool pool_;
 		int block_size_;
-		int curr_block_, curr_block_idx_;
+		int curr_idx_;
+		PoolIterator pool_iterator_;
+
 
 	};
 
@@ -138,39 +146,6 @@ namespace spatialaggregate {
 			return x_ == rhs.x_ && y_ == rhs.y_ && z_ == rhs.z_;
 		}
 
-
-//		inline uint64_t getKey( const CoordType& x, const CoordType& y, const CoordType& z, OcTree< CoordType, ValueType >* tree ) {
-//			return getKey( Eigen::Matrix< CoordType, 4, 1 >( x, y, z, 1.0 ), tree );
-//		}
-//
-//		inline uint64_t getKey( const Eigen::Matrix< CoordType, 4, 1 >& position, OcTree< CoordType, ValueType >* tree );
-//
-//
-//		inline bool operator==(const OcTreeKey &rhs) {
-//			return key_ == rhs.key_;
-//		}
-//
-//		inline bool operator<=(const OcTreeKey &rhs) {
-//			return key_ <= rhs.key_;
-//		}
-//
-//		inline bool operator>=(const OcTreeKey &rhs) {
-//			return key_ >= rhs.key_;
-//		}
-//
-//		inline bool operator<(const OcTreeKey &rhs) {
-//			return key_ < rhs.key_;
-//		}
-//
-//		inline bool operator>(const OcTreeKey &rhs) {
-//			return key_ > rhs.key_;
-//		}
-
-//		inline void setKey( uint64_t key ) {
-//			key_ = key;
-//			decodeMorton48( key_, x_, y_, z_ );
-//		}
-
 		inline uint64_t dilate1By2( uint64_t x );
 		inline uint64_t reduce1By2( uint64_t x );
 		inline uint64_t encodeMorton48( uint64_t x, uint64_t y, uint64_t z );
@@ -178,7 +153,6 @@ namespace spatialaggregate {
 
 		inline Eigen::Matrix< CoordType, 4, 1 > getPosition( OcTree< CoordType, ValueType >* tree ) const;
 
-//		uint64_t key_;
 		uint32_t x_, y_, z_;
 
 	public:
@@ -195,18 +169,18 @@ namespace spatialaggregate {
 	public:
 
 		OcTreeNode() { 
-			this->type_ = NUM_OCTREE_NODE_TYPES;
+			type_ = NUM_OCTREE_NODE_TYPES;
 			initialize();
 		}
 		
 		OcTreeNode( OcTreeNodeType type ) { 
-			this->type_ = type;
+			type_ = type;
 			initialize();
 		}
 
 		OcTreeNode( OcTreeNodeType type, boost::shared_ptr< OcTree< CoordType, ValueType > > tree ) {
-			this->type_ = type;
-			this->tree_ = tree;
+			type_ = type;
+			tree_ = tree;
 			initialize();
 		}
 		
@@ -214,6 +188,7 @@ namespace spatialaggregate {
 			tree_ = NULL;
 			parent_ = NULL;
 			memset( children_, 0, sizeof( children_ ) );
+			memset( neighbors_, 0, sizeof( neighbors_ ) );
 			depth_ = 0;
 			value_ = ValueType();
 		}
@@ -224,14 +199,12 @@ namespace spatialaggregate {
 			depth_ = node->depth_;
 			value_ = node->value_;
 			type_ = node->type_;
-
-			min_key_ = node->min_key_;
-			max_key_ = node->max_key_;
 			pos_key_ = node->pos_key_;
-			center_key_ = node->center_key_;
+			max_key_ = node->max_key_;
+			min_key_ = node->min_key_;
 
 			memcpy( children_, node->children_, sizeof( children_ ) );
-
+			memcpy( neighbors_, node->neighbors_, sizeof( neighbors_ ) );
 		}
 
 		inline void initialize( OcTreeNodeType type, const OcTreeKey< CoordType, ValueType >& key, const ValueType& value, int depth, OcTreeNode< CoordType, ValueType >* parent, OcTree< CoordType, ValueType >* tree );
@@ -250,7 +223,7 @@ namespace spatialaggregate {
 		inline CoordType resolution();
 
 		inline Eigen::Matrix< CoordType, 4, 1 > getPosition() const {
-			return center_key_.getPosition( tree_ );
+			return pos_key_.getPosition( tree_ );
 		}
 
 		OcTreeNodeType type_;
@@ -258,9 +231,9 @@ namespace spatialaggregate {
 		OcTree< CoordType, ValueType >* tree_;
 		OcTreeNode< CoordType, ValueType >* parent_;
 		OcTreeNode< CoordType, ValueType >* children_[8];
-		
-		OcTreeKey< CoordType, ValueType > pos_key_, center_key_, min_key_, max_key_;
-		
+		OcTreeNode< CoordType, ValueType >* neighbors_[27];
+
+		OcTreeKey< CoordType, ValueType > pos_key_, min_key_, max_key_;
 		int depth_;
 		ValueType value_;
 		
@@ -279,6 +252,8 @@ namespace spatialaggregate {
 		
 		inline unsigned int getOctant( const OcTreeKey< CoordType, ValueType >& position );
 		
+		inline void getCenterKey( OcTreeKey< CoordType, ValueType >& center_key );
+
 		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth );
 		
 		inline void getAllLeaves( std::list< OcTreeNode< CoordType, ValueType >* >& nodes );
@@ -297,6 +272,18 @@ namespace spatialaggregate {
 		inline void sweepDown( void* data, void (*f)( OcTreeNode< CoordType, ValueType >* current, OcTreeNode< CoordType, ValueType >* next, void* data ) );
 		
 		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const OcTreeKey< CoordType, ValueType >& position, int maxDepth );
+
+		inline unsigned int countNodes() {
+			unsigned int numNodes = 1;
+			for( unsigned int i = 0; i < 8; i++ )
+				if( children_[i] )
+					numNodes += children_[i]->countNodes();
+			return numNodes;
+		}
+
+		inline void finishBranch();
+
+		inline void establishNeighbors();
 
 
 	public:
@@ -375,6 +362,8 @@ namespace spatialaggregate {
 	class OcTreeNodeDynamicAllocator : public OcTreeNodeAllocator< CoordType, ValueType > {
 	public:
 
+		typedef typename DynamicAllocator< OcTreeNode< CoordType, ValueType > >::PoolIterator AllocPoolIterator;
+
 		OcTreeNodeDynamicAllocator( unsigned int block_size )
 		: alloc_( block_size ) {
 		}
@@ -389,6 +378,18 @@ namespace spatialaggregate {
 		inline virtual void deallocateNode( OcTreeNode< CoordType, ValueType >* node ) {}
 
 		inline virtual void reset() {
+			for( AllocPoolIterator it = alloc_.pool_.begin(); it != alloc_.pool_.end(); it++ ) {
+				AllocPoolIterator nit = it;
+				nit++;
+				if( nit != alloc_.pool_.end()  ) {
+					for( unsigned int j = 0; j < alloc_.block_size_; j++ )
+						(*it)[j].initialize();
+				}
+				else {
+					for( unsigned int j = 0; j < alloc_.curr_idx_; j++ )
+						(*it)[j].initialize();
+				}
+			}
 			alloc_.reset();
 		}
 
@@ -456,6 +457,8 @@ namespace spatialaggregate {
 		uint32_t depth_masks_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t minmasks_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t maxmasks_[MAX_REPRESENTABLE_DEPTH+1];
+		uint32_t neighbor_octant_[8][27];
+		uint32_t parent_neighbor_[8][27];
 		
 		// required to generate keys
 		Eigen::Matrix< CoordType, 4, 1 > min_position_, position_normalizer_;

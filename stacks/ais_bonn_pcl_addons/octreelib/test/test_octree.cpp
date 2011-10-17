@@ -135,6 +135,7 @@ void testOnRandomPoints() {
 			
 			std::cerr << "integral value " << value << "\n";
 			
+
 		}
 
 
