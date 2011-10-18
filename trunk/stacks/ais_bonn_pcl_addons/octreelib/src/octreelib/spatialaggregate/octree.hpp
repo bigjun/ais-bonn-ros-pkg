@@ -531,7 +531,7 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 	else {
 
 		// too small on next layer?
-		if( depth_ + 1 >= maxDepth )
+		if( depth_ + 1 > maxDepth )
 			return this;
 
 		spatialaggregate::OcTreeNode< CoordType, ValueType >* n = children_[ getOctant(position) ];
