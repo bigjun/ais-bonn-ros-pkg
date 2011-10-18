@@ -426,7 +426,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::initialize( Oc
 
 
 template< typename CoordType, typename ValueType >
-inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getCenterKey( OcTreeKey< CoordType, ValueType >& center_key ) {
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getCenterKey( OcTreeKey< CoordType, ValueType >& center_key ) const {
 
 	const uint32_t center_diff =  (max_key_.x_ - min_key_.x_) >> 1;
 	center_key.x_ = min_key_.x_ + center_diff;
@@ -584,7 +584,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::finishBranch()
 }
 
 
-// TODO: precompute look-up tables ( 8 times (3x3x3) )
+// uses precomputed look-up tables
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::establishNeighbors() {
 
