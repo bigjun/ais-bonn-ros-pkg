@@ -226,6 +226,12 @@ namespace spatialaggregate {
 			return pos_key_.getPosition( tree_ );
 		}
 
+		inline Eigen::Matrix< CoordType, 4, 1 > getCenterPosition() const {
+			OcTreeKey< CoordType, ValueType > center_key;
+			getCenterKey( center_key );
+			return center_key.getPosition( tree_ );
+		}
+
 		OcTreeNodeType type_;
 
 		OcTree< CoordType, ValueType >* tree_;
@@ -252,7 +258,7 @@ namespace spatialaggregate {
 		
 		inline unsigned int getOctant( const OcTreeKey< CoordType, ValueType >& position );
 		
-		inline void getCenterKey( OcTreeKey< CoordType, ValueType >& center_key );
+		inline void getCenterKey( OcTreeKey< CoordType, ValueType >& center_key ) const;
 
 		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth );
 		
