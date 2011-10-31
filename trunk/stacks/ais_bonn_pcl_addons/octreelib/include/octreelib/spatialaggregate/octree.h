@@ -268,6 +268,10 @@ namespace spatialaggregate {
 
 		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool lowerDepthLeaves );
 
+		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
+			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, lowerDepthLeaves );
+		}
+
 		inline ValueType getValueInVolume( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 		
 		inline void applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, OcTreeNode< CoordType, ValueType >* current, void* data ), const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
@@ -278,6 +282,13 @@ namespace spatialaggregate {
 		inline void sweepDown( void* data, void (*f)( OcTreeNode< CoordType, ValueType >* current, OcTreeNode< CoordType, ValueType >* next, void* data ) );
 		
 		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const OcTreeKey< CoordType, ValueType >& position, int maxDepth );
+
+		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const Eigen::Matrix< CoordType, 4, 1 >& position, int maxDepth ) {
+			return findRepresentative( tree_->getKey( position ), maxDepth );
+		}
+
+		inline void getNeighbors( std::list< OcTreeNode< CoordType, ValueType >* >& neighbors );
+
 
 		inline unsigned int countNodes() {
 			unsigned int numNodes = 1;
@@ -451,6 +462,10 @@ namespace spatialaggregate {
 
 		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const Eigen::Matrix< CoordType, 4, 1 >& position, int maxDepth ) {
 			return root_->findRepresentative( getKey( position ), maxDepth );
+		}
+
+		inline void acquire( OcTreeNode< CoordType, ValueType >* node ) {
+			node->tree_ = this;
 		}
 
 		OcTreeNode< CoordType, ValueType >* root_;

@@ -275,13 +275,15 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 		// check if point in leaf is within region
 		if( inRegion( minPosition, maxPosition ) ) {
 			points.push_back( this );
+			return;
 		}
 		
 	}
 	else {
 		
 		if( depth_ == maxDepth ) {
-			points.push_back( this );
+			if( inRegion( minPosition, maxPosition ) )
+				points.push_back( this );
 			return;
 		}
 		
@@ -296,6 +298,17 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 		}
 	}
 	
+}
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( std::list< OcTreeNode< CoordType, ValueType >* >& neighbors ) {
+
+	for( int n = 0; n < 27; n++ ) {
+		if( neighbors_[n] ) {
+			neighbors.push_back( neighbors_[n] );
+		}
+	}
+
 }
 
 
@@ -530,8 +543,7 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		return this;
 	else {
 
-		// too small on next layer?
-		if( depth_ + 1 > maxDepth )
+		if( depth_ == maxDepth )
 			return this;
 
 		spatialaggregate::OcTreeNode< CoordType, ValueType >* n = children_[ getOctant(position) ];
