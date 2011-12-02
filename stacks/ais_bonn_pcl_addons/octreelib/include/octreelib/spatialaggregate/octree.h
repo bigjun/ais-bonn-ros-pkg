@@ -232,6 +232,14 @@ namespace spatialaggregate {
 			return center_key.getPosition( tree_ );
 		}
 
+		inline Eigen::Matrix< CoordType, 4, 1 > getMinPosition() const {
+			return min_key_.getPosition( tree_ );
+		}
+
+		inline Eigen::Matrix< CoordType, 4, 1 > getMaxPosition() const {
+			return max_key_.getPosition( tree_ );
+		}
+
 		OcTreeNodeType type_;
 
 		OcTree< CoordType, ValueType >* tree_;
@@ -267,8 +275,12 @@ namespace spatialaggregate {
 		inline void getAllLeavesInVolume( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 
 		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool lowerDepthLeaves );
-
 		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
+			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, lowerDepthLeaves );
+		}
+
+		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool lowerDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
 			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, lowerDepthLeaves );
 		}
 
@@ -288,6 +300,7 @@ namespace spatialaggregate {
 		}
 
 		inline void getNeighbors( std::list< OcTreeNode< CoordType, ValueType >* >& neighbors );
+		inline void getNeighbors( std::vector< OcTreeNode< CoordType, ValueType >* >& neighbors );
 
 
 		inline unsigned int countNodes() {
@@ -452,11 +465,29 @@ namespace spatialaggregate {
 			return std::min( (double)max_depth_, std::max( 0.0, (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_ ) );
 		}
 
+		inline unsigned char ceilDepthForVolumeSize( CoordType volumeSize ) {
+
+			if( volumeSize < minimum_volume_size_ )
+				return max_depth_;
+
+			const CoordType scale = volumeSize * inv_minimum_volume_size_;
+
+			if( scale > 65535 )
+				return 0;
+
+			return scale_depth_table_[ (int)scale ];
+
+		}
+
 		inline CoordType volumeSizeForDepth( int depth ) {
 			return resolutions_[depth];
 		}
 
 		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
+			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, lowerDepthLeaves );
+		}
+
+		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
 			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, lowerDepthLeaves );
 		}
 
@@ -470,7 +501,7 @@ namespace spatialaggregate {
 
 		OcTreeNode< CoordType, ValueType >* root_;
 		
-		CoordType minimum_volume_size_;
+		CoordType minimum_volume_size_, inv_minimum_volume_size_;
 		double log_minimum_volume_size_;
 		double log2_inv_;
 		int max_depth_;
@@ -480,9 +511,10 @@ namespace spatialaggregate {
 		uint32_t maxmasks_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t neighbor_octant_[8][27];
 		uint32_t parent_neighbor_[8][27];
+		uint8_t scale_depth_table_[65536];
 		
 		// required to generate keys
-		Eigen::Matrix< CoordType, 4, 1 > min_position_, position_normalizer_;
+		Eigen::Matrix< CoordType, 4, 1 > min_position_, position_normalizer_, inv_position_normalizer_;
 
 		boost::shared_ptr< OcTreeNodeAllocator< CoordType, ValueType > > allocator_;
 
