@@ -86,16 +86,11 @@ template< typename CoordType, typename ValueType >
 inline Eigen::Matrix< CoordType, 4, 1 > spatialaggregate::OcTreeKey< CoordType, ValueType >::getPosition( OcTree< CoordType, ValueType >* tree ) const {
 
 	// normalize to min max position
-	Eigen::Matrix< CoordType, 4, 1 > pos;
-	pos(0) = x_;
-	pos(1) = y_;
-	pos(2) = z_;
+	Eigen::Matrix< CoordType, 4, 1 > pos( x_, y_, z_, 1 );
 
 	// tree position normalizer ensures that we only use 16 bit in each dimension (implies max depth of 16)
-	pos = pos.cwiseQuotient( tree->position_normalizer_ ).eval();
+	pos = pos.cwiseProduct( tree->inv_position_normalizer_ ).eval();
 	pos += tree->min_position_;
-
-	pos(3) = 1.0;
 
 	return pos;
 
@@ -300,8 +295,61 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 	
 }
 
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth, bool higherDepthLeaves ) {
+
+	if( depth_ > maxDepth )
+		return;
+
+	if( type_ == OCTREE_LEAF_NODE ) {
+
+		if( !higherDepthLeaves && depth_ != maxDepth )
+			return;
+
+		// check if point in leaf is within region
+		if( inRegion( minPosition, maxPosition ) ) {
+			points.push_back( this );
+			return;
+		}
+
+	}
+	else {
+
+		if( depth_ == maxDepth ) {
+			if( inRegion( minPosition, maxPosition ) )
+				points.push_back( this );
+			return;
+		}
+
+		// for all children
+		// - if regions overlap: call function for the child
+		for( unsigned int i = 0; i < 8; i++ ) {
+			if( !children_[i] )
+				continue;
+
+			if( children_[i]->overlap( minPosition, maxPosition ) )
+				children_[i]->getAllNodesInVolumeOnDepth( points, minPosition, maxPosition, maxDepth, higherDepthLeaves );
+		}
+	}
+
+}
+
+
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( std::list< OcTreeNode< CoordType, ValueType >* >& neighbors ) {
+
+	for( int n = 0; n < 27; n++ ) {
+		if( neighbors_[n] ) {
+			neighbors.push_back( neighbors_[n] );
+		}
+	}
+
+}
+
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( std::vector< OcTreeNode< CoordType, ValueType >* >& neighbors ) {
 
 	for( int n = 0; n < 27; n++ ) {
 		if( neighbors_[n] ) {
@@ -532,6 +580,8 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 	assert( false );
 
+	return NULL;
+
 }
 
 
@@ -710,6 +760,9 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 	position_normalizer_.setConstant( 1.0 / minRepresentedVolumeSize );
 	position_normalizer_(3) = 1.0;
 
+	inv_position_normalizer_.setConstant( minRepresentedVolumeSize );
+	inv_position_normalizer_(3) = 1.0;
+
 	root_ = allocator->allocateNode();
 
 	ValueType value;
@@ -717,6 +770,7 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 //	root_->finishBranch();
 
 	minimum_volume_size_ = minimumVolumeSize;
+	inv_minimum_volume_size_ = 1.0 / minimum_volume_size_;
 
 	for( int i = 0; i <= max_depth_; i++ ) {
 		resolutions_[i] = minimum_volume_size_ * pow( 2.0, max_depth_ - i );
@@ -732,6 +786,20 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 
 	log_minimum_volume_size_ = log( minimumVolumeSize );
 	log2_inv_ = 1.0 / log( 2.0 );
+
+
+//	// precompute scale-depth table
+//	for( unsigned int i = 0; i < 65536; i++ ) {
+//
+//		if( i == 0 ) {
+//			scale_depth_table_[i] = max_depth_;
+//			continue;
+//		}
+//
+//
+//		float depth = logf( (float)i ) * log2_inv_;
+//		scale_depth_table_[i] = (uint8_t) (max_depth_ - std::min( max_depth_, (int)ceil(depth) ));
+//	}
 
 
 	// precompute neighborhood look-up tables ( 8 times 27, two tables of indices for parent neighbor and its child )
