@@ -126,6 +126,9 @@ namespace spatialaggregate {
 
 		OcTreeKey() {}
 
+		OcTreeKey( uint32_t x, uint32_t y, uint32_t z )
+		: x_(x), y_(y), z_(z) {}
+
 		OcTreeKey( const CoordType& x, const CoordType& y, const CoordType& z, OcTree< CoordType, ValueType >* tree ) {
 			setKey( x, y, z, tree );
 		}
@@ -462,7 +465,13 @@ namespace spatialaggregate {
 		}
 		
 		inline double depthForVolumeSize( CoordType volumeSize ) {
-			return std::min( (double)max_depth_, std::max( 0.0, (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_ ) );
+			const double depth = (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_;
+			if( depth < 0.0 )
+				return 0.0;
+			else if( depth > max_depth_ )
+				return max_depth_;
+			else
+				return depth;
 		}
 
 		inline unsigned char ceilDepthForVolumeSize( CoordType volumeSize ) {
