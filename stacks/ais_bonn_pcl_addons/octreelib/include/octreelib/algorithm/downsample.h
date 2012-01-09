@@ -47,7 +47,7 @@
 namespace algorithm {
 	
 	template< typename CoordType, typename ValueType >
-	class OcTreeSamplingMap : public std::map< unsigned int, std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > {
+	class OcTreeSamplingMap : public std::map< unsigned int, std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > {
 	public:
 		OcTreeSamplingMap() {}
 		~OcTreeSamplingMap() {}

@@ -309,6 +309,23 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth, bool higherDepthLeaves ) {
 
+//	if( depth_ == maxDepth ) {
+//		if( inRegion( minPosition, maxPosition ) ) {
+//			points.push_back( this );
+//		}
+//	}
+//	else if( depth_ < maxDepth ) {
+//
+//		// for all children
+//		// - if regions overlap: call function for the child
+//		for( unsigned int i = 0; i < 8; i++ ) {
+//			if( children_[i] && children_[i]->overlap( minPosition, maxPosition ) )
+//				children_[i]->getAllNodesInVolumeOnDepth( points, minPosition, maxPosition, maxDepth, higherDepthLeaves );
+//		}
+//
+//	}
+
+
 	if( depth_ > maxDepth )
 		return;
 
