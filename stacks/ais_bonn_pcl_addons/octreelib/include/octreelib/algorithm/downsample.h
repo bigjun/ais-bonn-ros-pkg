@@ -40,6 +40,7 @@
 
 #include <map>
 #include <list>
+#include <vector>
 
 #include <octreelib/spatialaggregate/octree.h>
 
@@ -49,6 +50,9 @@ namespace algorithm {
 	template< typename CoordType, typename ValueType >
 	class OcTreeSamplingMap : public std::map< unsigned int, std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > {
 	public:
+//		typedef std::map< unsigned int, std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > super_type;
+//		typedef super_type::iterator iterator;
+//		typedef super_type::const_iterator const_iterator;
 		OcTreeSamplingMap() {}
 		~OcTreeSamplingMap() {}
 
@@ -99,6 +103,42 @@ namespace algorithm {
 		return samplingMap;
 
 	}
+
+
+
+	template< typename CoordType, typename ValueType >
+	class OcTreeSamplingVectorMap : public std::map< unsigned int, std::vector< spatialaggregate::OcTreeNode< CoordType, ValueType >* > > {
+	public:
+		OcTreeSamplingVectorMap() {}
+		~OcTreeSamplingVectorMap() {}
+
+	public:
+   	    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+	};
+
+	// downToDepth: include a leaf at depth in lists from 0 to depth
+	template< typename CoordType, typename ValueType >
+	OcTreeSamplingVectorMap< CoordType, ValueType > downsampleVectorOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0 ) {
+
+		typedef OcTreeSamplingMap< CoordType, ValueType > SamplingMap;
+		//typedef SamplingMap::iterator samplingmap_iterator;
+
+		SamplingMap samplingMap = downsampleOcTree( tree, downToMaxDepth, maxDepth );
+		OcTreeSamplingVectorMap< CoordType, ValueType > samplingVectorMap;
+
+		typename SamplingMap::iterator it = samplingMap.begin();
+
+		while( it != samplingMap.end() ) {
+
+			samplingVectorMap[ it->first ].assign( it->second.begin(), it->second.end() );
+			++it;
+
+		}
+
+		return samplingVectorMap;
+
+	}
+
 };
 
 #include <octreelib/algorithm/downsample.hpp>
