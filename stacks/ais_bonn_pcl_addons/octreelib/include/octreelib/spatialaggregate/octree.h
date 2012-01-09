@@ -465,7 +465,8 @@ namespace spatialaggregate {
 		}
 		
 		inline double depthForVolumeSize( CoordType volumeSize ) {
-			const double depth = (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_;
+//			const double depth = (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_;
+			const double depth = (double)max_depth_ - (log2f( volumeSize ) - log_minimum_volume_size_);
 			if( depth < 0.0 )
 				return 0.0;
 			else if( depth > max_depth_ )
@@ -474,22 +475,31 @@ namespace spatialaggregate {
 				return depth;
 		}
 
-		inline unsigned char ceilDepthForVolumeSize( CoordType volumeSize ) {
+//		inline double depthForVolumeSize( CoordType volumeSize ) {
+//
+//			if( volumeSize < minimum_volume_size_ )
+//				return max_depth_;
+//
+//			const CoordType scale = volumeSize * inv_minimum_volume_size_;
+//
+//			if( scale > 65535 )
+//				return 0.0;
+//
 
-			if( volumeSize < minimum_volume_size_ )
-				return max_depth_;
-
-			const CoordType scale = volumeSize * inv_minimum_volume_size_;
-
-			if( scale > 65535 )
-				return 0;
-
-			return scale_depth_table_[ (int)scale ];
-
-		}
+		//			return scale_depth_table_[ (int)scale ];
+//
+//		}
 
 		inline CoordType volumeSizeForDepth( int depth ) {
 			return resolutions_[depth];
+		}
+
+		inline CoordType minVolumeSizeForDepth( int depth ) {
+			return minResolutions_[depth];
+		}
+
+		inline CoordType maxVolumeSizeForDepth( int depth ) {
+			return maxResolutions_[depth];
 		}
 
 		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
@@ -515,12 +525,14 @@ namespace spatialaggregate {
 		double log2_inv_;
 		int max_depth_;
 		float resolutions_[MAX_REPRESENTABLE_DEPTH+1];
+		float minResolutions_[MAX_REPRESENTABLE_DEPTH+1];
+		float maxResolutions_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t depth_masks_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t minmasks_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t maxmasks_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t neighbor_octant_[8][27];
 		uint32_t parent_neighbor_[8][27];
-		uint8_t scale_depth_table_[65536];
+		double scale_depth_table_[65536];
 		
 		// required to generate keys
 		Eigen::Matrix< CoordType, 4, 1 > min_position_, position_normalizer_, inv_position_normalizer_;

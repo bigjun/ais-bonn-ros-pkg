@@ -131,34 +131,40 @@ inline unsigned int spatialaggregate::OcTreeNode< CoordType, ValueType >::getOct
 template< typename CoordType, typename ValueType >
 inline bool spatialaggregate::OcTreeNode< CoordType, ValueType >::inRegion( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition ) {
 	
-	if( pos_key_.x_ >= minPosition.x_ && pos_key_.x_ <= maxPosition.x_ && pos_key_.y_ >= minPosition.y_ && pos_key_.y_ <= maxPosition.y_ && pos_key_.z_ >= minPosition.z_ && pos_key_.z_ <= maxPosition.z_ ) {
-		return true;
-	}
-	else
-		return false;
+	return pos_key_.x_ >= minPosition.x_ && pos_key_.x_ <= maxPosition.x_ && pos_key_.y_ >= minPosition.y_ && pos_key_.y_ <= maxPosition.y_ && pos_key_.z_ >= minPosition.z_ && pos_key_.z_ <= maxPosition.z_;
+
+//	if( pos_key_.x_ >= minPosition.x_ && pos_key_.x_ <= maxPosition.x_ && pos_key_.y_ >= minPosition.y_ && pos_key_.y_ <= maxPosition.y_ && pos_key_.z_ >= minPosition.z_ && pos_key_.z_ <= maxPosition.z_ ) {
+//		return true;
+//	}
+//	else
+//		return false;
 
 }
 
 template< typename CoordType, typename ValueType >
 inline bool spatialaggregate::OcTreeNode< CoordType, ValueType >::inRegion( const OcTreeKey< CoordType, ValueType >& position ) {
 	
-	if( position.x_ >= min_key_.x_ && position.x_ <= max_key_.x_ && position.y_ >= min_key_.y_ && position.y_ <= max_key_.y_ && position.z_ >= min_key_.z_ && position.z_ <= max_key_.z_ ) {
-		return true;
-	}
-	else
-		return false;
+	return position.x_ >= min_key_.x_ && position.x_ <= max_key_.x_ && position.y_ >= min_key_.y_ && position.y_ <= max_key_.y_ && position.z_ >= min_key_.z_ && position.z_ <= max_key_.z_;
+
+//	if( position.x_ >= min_key_.x_ && position.x_ <= max_key_.x_ && position.y_ >= min_key_.y_ && position.y_ <= max_key_.y_ && position.z_ >= min_key_.z_ && position.z_ <= max_key_.z_ ) {
+//		return true;
+//	}
+//	else
+//		return false;
 
 }
 
 template< typename CoordType, typename ValueType >
 inline bool spatialaggregate::OcTreeNode< CoordType, ValueType >::overlap( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition ) {
 	
-	if( max_key_.x_ < minPosition.x_ || max_key_.y_ < minPosition.y_ || max_key_.z_ < minPosition.z_ || min_key_.x_ > maxPosition.x_ || min_key_.y_ > maxPosition.y_ || min_key_.z_ > maxPosition.z_ ) {
-		return false;
-	}
-	else {
-		return true;
-	}
+	return (max_key_.x_ >= minPosition.x_ && max_key_.y_ >= minPosition.y_ && max_key_.z_ >= minPosition.z_ && min_key_.x_ <= maxPosition.x_ && min_key_.y_ <= maxPosition.y_ && min_key_.z_ <= maxPosition.z_);
+
+//	if( max_key_.x_ < minPosition.x_ || max_key_.y_ < minPosition.y_ || max_key_.z_ < minPosition.z_ || min_key_.x_ > maxPosition.x_ || min_key_.y_ > maxPosition.y_ || min_key_.z_ > maxPosition.z_ ) {
+//		return false;
+//	}
+//	else {
+//		return true;
+//	}
 
 }
 
@@ -166,24 +172,28 @@ inline bool spatialaggregate::OcTreeNode< CoordType, ValueType >::overlap( const
 template< typename CoordType, typename ValueType >
 inline bool spatialaggregate::OcTreeNode< CoordType, ValueType >::containedInRegion( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition ) {
 	
-	if( !overlap( minPosition, maxPosition ) )
-		return false;
-	
-	if( min_key_.x_ < minPosition.x_ || min_key_.y_ < minPosition.y_ || min_key_.z_ < minPosition.z_ || max_key_.x_ > maxPosition.x_ || max_key_.y_ > maxPosition.y_ || max_key_.z_ > maxPosition.z_ )
-		return false;
+	return (overlap( minPosition, maxPosition ) && min_key_.x_ >= minPosition.x_ && min_key_.y_ >= minPosition.y_ && min_key_.z_ >= minPosition.z_ && max_key_.x_ <= maxPosition.x_ && max_key_.y_ <= maxPosition.y_ && max_key_.z_ <= maxPosition.z_);
 
-	return true;
+//	if( !overlap( minPosition, maxPosition ) )
+//		return false;
+//
+//	if( min_key_.x_ < minPosition.x_ || min_key_.y_ < minPosition.y_ || min_key_.z_ < minPosition.z_ || max_key_.x_ > maxPosition.x_ || max_key_.y_ > maxPosition.y_ || max_key_.z_ > maxPosition.z_ )
+//		return false;
+//
+//	return true;
 }
 
 
 template< typename CoordType, typename ValueType >
 inline bool spatialaggregate::OcTreeNode< CoordType, ValueType >::regionContained( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition ) {
 	
-	if( !overlap( minPosition, maxPosition ) )
-		return false;
+	return (overlap( minPosition, maxPosition ) && min_key_.x_ >= minPosition.x_ && min_key_.y_ >= minPosition.y_ && min_key_.z_ >= minPosition.z_ && max_key_.x_ <= maxPosition.x_ && max_key_.y_ <= maxPosition.y_ && max_key_.z_ <= maxPosition.z_);
 	
-	if( min_key_.x_ < minPosition.x_ || min_key_.y_ < minPosition.y_ || min_key_.z_ < minPosition.z_ || max_key_.x_ > maxPosition.x_ || max_key_.y_ > maxPosition.y_ || max_key_.z_ > maxPosition.z_ )
-		return false;
+//	if( !overlap( minPosition, maxPosition ) )
+//		return false;
+//
+//	if( min_key_.x_ < minPosition.x_ || min_key_.y_ < minPosition.y_ || min_key_.z_ < minPosition.z_ || max_key_.x_ > maxPosition.x_ || max_key_.y_ > maxPosition.y_ || max_key_.z_ > maxPosition.z_ )
+//		return false;
 	
 	return true;
 }
@@ -351,11 +361,16 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( 
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( std::vector< OcTreeNode< CoordType, ValueType >* >& neighbors ) {
 
-	for( int n = 0; n < 27; n++ ) {
-		if( neighbors_[n] ) {
-			neighbors.push_back( neighbors_[n] );
-		}
-	}
+	neighbors.assign( &neighbors_[0], &neighbors_[26] );
+
+//	neighbors.resize(27);
+//	for( int n = 0; n < 27; n++ ) {
+//		if( neighbors_[n] ) {
+//			neighbors[i++] = neighbors_[n];
+//		}
+//		neighbors[n] = neighbors_[n];
+//	}
+//	neighbors.resize(i);
 
 }
 
@@ -774,6 +789,8 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 
 	for( int i = 0; i <= max_depth_; i++ ) {
 		resolutions_[i] = minimum_volume_size_ * pow( 2.0, max_depth_ - i );
+		minResolutions_[i] = minimum_volume_size_ * pow( 2.0, (double)(max_depth_ - i) - 0.5 );
+		maxResolutions_[i] = minimum_volume_size_ * pow( 2.0, (double)(max_depth_ - i) + 0.5 );
 		if( i < max_depth_ )
 			depth_masks_[i] = 0x1 << (MAX_REPRESENTABLE_DEPTH-i-1);
 		else
@@ -784,7 +801,7 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 
 	}
 
-	log_minimum_volume_size_ = log( minimumVolumeSize );
+	log_minimum_volume_size_ = log2( minimumVolumeSize );
 	log2_inv_ = 1.0 / log( 2.0 );
 
 
@@ -797,8 +814,8 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 //		}
 //
 //
-//		float depth = logf( (float)i ) * log2_inv_;
-//		scale_depth_table_[i] = (uint8_t) (max_depth_ - std::min( max_depth_, (int)ceil(depth) ));
+//		double depth = log2f( (double)i );
+//		scale_depth_table_[i] = (double)max_depth_ - std::min( (double)max_depth_, depth );
 //	}
 
 
