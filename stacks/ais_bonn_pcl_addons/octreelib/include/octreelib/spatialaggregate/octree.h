@@ -224,6 +224,7 @@ namespace spatialaggregate {
 		
 
 		inline CoordType resolution();
+		inline CoordType invResolution();
 
 		inline Eigen::Matrix< CoordType, 4, 1 > getPosition() const {
 			return pos_key_.getPosition( tree_ );
@@ -302,8 +303,16 @@ namespace spatialaggregate {
 			return findRepresentative( tree_->getKey( position ), maxDepth );
 		}
 
+		inline OcTreeNode< CoordType, ValueType >* findClosestNode( const OcTreeKey< CoordType, ValueType >& position, int depth, int& dist );
+
+		inline OcTreeNode< CoordType, ValueType >* findClosestNode( const Eigen::Matrix< CoordType, 4, 1 >& position, int depth, int& dist ) {
+			return findClosestNode( tree_->getKey( position ), depth, dist );
+		}
+
 		inline void getNeighbors( std::list< OcTreeNode< CoordType, ValueType >* >& neighbors );
 		inline void getNeighbors( std::vector< OcTreeNode< CoordType, ValueType >* >& neighbors );
+
+		inline OcTreeNode< CoordType, ValueType >* getNeighbor( int dx, int dy, int dz );
 
 
 		inline unsigned int countNodes() {
@@ -317,6 +326,12 @@ namespace spatialaggregate {
 		inline void finishBranch();
 
 		inline void establishNeighbors();
+
+		inline bool interpolateTriLinear( double& value, OcTreeNode< CoordType, ValueType >* node, const OcTreeKey< CoordType, ValueType >& queryKey, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
+
+		inline double getFiniteForwardDifference( int dim, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
+		inline double getFiniteBackwardDifference( int dim, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
+		inline double getFiniteCentralDifference( int dim, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
 
 
 	public:
@@ -525,6 +540,7 @@ namespace spatialaggregate {
 		double log2_inv_;
 		int max_depth_;
 		float resolutions_[MAX_REPRESENTABLE_DEPTH+1];
+		float inv_resolutions_[MAX_REPRESENTABLE_DEPTH+1];
 		float minResolutions_[MAX_REPRESENTABLE_DEPTH+1];
 		float maxResolutions_[MAX_REPRESENTABLE_DEPTH+1];
 		uint32_t depth_masks_[MAX_REPRESENTABLE_DEPTH+1];
@@ -534,6 +550,9 @@ namespace spatialaggregate {
 		uint32_t parent_neighbor_[8][27];
 		double scale_depth_table_[65536];
 		
+		uint32_t neighborhood_p1_map_[3];
+		uint32_t neighborhood_m1_map_[3];
+
 		// required to generate keys
 		Eigen::Matrix< CoordType, 4, 1 > min_position_, position_normalizer_, inv_position_normalizer_;
 
