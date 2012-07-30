@@ -193,7 +193,7 @@ namespace spatialaggregate {
 			memset( children_, 0, sizeof( children_ ) );
 			memset( neighbors_, 0, sizeof( neighbors_ ) );
 			depth_ = 0;
-			value_ = ValueType();
+			value_.initialize();
 		}
 		
 		void initialize( OcTreeNode* node ) {
@@ -332,6 +332,7 @@ namespace spatialaggregate {
 		inline double getFiniteForwardDifference( int dim, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
 		inline double getFiniteBackwardDifference( int dim, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
 		inline double getFiniteCentralDifference( int dim, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
+		inline double getFiniteCentralDifference2( int dim1, int dim2, double (*f)( OcTreeNode< CoordType, ValueType >* n ) );
 
 
 	public:

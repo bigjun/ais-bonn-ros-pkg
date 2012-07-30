@@ -86,7 +86,7 @@ template< typename CoordType, typename ValueType >
 inline Eigen::Matrix< CoordType, 4, 1 > spatialaggregate::OcTreeKey< CoordType, ValueType >::getPosition( OcTree< CoordType, ValueType >* tree ) const {
 
 	// normalize to min max position
-	Eigen::Matrix< CoordType, 4, 1 > pos( x_, y_, z_, 1 );
+	Eigen::Matrix< CoordType, 4, 1 > pos( x_, y_, z_, 0 );
 
 	// tree position normalizer ensures that we only use 16 bit in each dimension (implies max depth of 16)
 	pos = pos.cwiseProduct( tree->inv_position_normalizer_ ).eval();
@@ -1004,29 +1004,29 @@ inline double spatialaggregate::OcTreeNode< CoordType, ValueType >::getFiniteCen
 //				vm1 += weight * f( neighborm1 );
 //				summ1 += weight;
 //			}
-//			else {
-//				vm1 += weight * v;
-//				summ1 += weight;
-//			}
+////			else {
+////				vm1 += weight * v;
+////				summ1 += weight;
+////			}
 //
 //			if( neighborp1 ) {
 //				vp1 += weight * f( neighborp1 );
 //				sump1 += weight;
 //			}
-//			else {
-//				vp1 += weight * v;
-//				sump1 += weight;
-//			}
+////			else {
+////				vp1 += weight * v;
+////				sump1 += weight;
+////			}
 //
 //		}
 //	}
 //
-//	if( sump1 > 0 )
+//	if( sump1 > std::numeric_limits<double>::epsilon() )
 //		vp1 /= sump1;
 //	else
 //		vp1 = v;
 //
-//	if( summ1 > 0 )
+//	if( summ1 > std::numeric_limits<double>::epsilon() )
 //		vm1 /= summ1;
 //	else
 //		vm1 = v;
@@ -1037,16 +1037,6 @@ inline double spatialaggregate::OcTreeNode< CoordType, ValueType >::getFiniteCen
 	// select next neighbor in query dimension
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborm1 = getNeighbor( dim == 0 ? -1 : 0, dim == 1 ? -1 : 0, dim == 2 ? -1 : 0 );
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborp1 = getNeighbor( dim == 0 ? 1 : 0, dim == 1 ? 1 : 0, dim == 2 ? 1 : 0 );
-
-//	double vp1 = 0.0;
-//	double vm1 = 0.0;
-//	if( neighborm1 )
-//		vm1 = f( neighborm1 );
-//	if( neighborp1 )
-//		vp1 = f( neighborp1 );
-//
-//	return 0.5 * (vp1-vm1);
-
 
 	if( neighborm1 && neighborp1 ) {
 		return 0.5 * (f( neighborp1 ) - f( neighborm1 ));
@@ -1062,39 +1052,39 @@ inline double spatialaggregate::OcTreeNode< CoordType, ValueType >::getFiniteCen
 		}
 		else {
 
-//			vp1 = v;
+			vp1 = v;
 
-			double sump1 = 0.0;
-			for( int di = -1; di <= 1; di++ ) {
-				for( int dj = -1; dj <= 1; dj++ ) {
-
-					spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor = NULL;
-
-					const double weight = (1.f-0.5f*fabsf(di)) * (1.f-0.5f*fabsf(dj));
-
-					if( dim == 0 )
-						neighbor = getNeighbor( 1, di, dj );
-					else if( dim == 1 )
-						neighbor = getNeighbor( di, 1, dj );
-					else
-						neighbor = getNeighbor( di, dj, 1 );
-
-					if( neighbor ) {
-						vp1 += weight * f( neighbor );
-						sump1 += weight;
-					}
-					else {
-						vp1 += weight * v;
-						sump1 += weight;
-					}
-
-				}
-			}
-
-			if( sump1 > 0 )
-				vp1 /= sump1;
-			else
-				vp1 = v;
+//			double sump1 = 0.0;
+//			for( int di = -1; di <= 1; di++ ) {
+//				for( int dj = -1; dj <= 1; dj++ ) {
+//
+//					spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor = NULL;
+//
+//					const double weight = (1.f-0.5f*fabsf(di)) * (1.f-0.5f*fabsf(dj));
+//
+//					if( dim == 0 )
+//						neighbor = getNeighbor( 1, di, dj );
+//					else if( dim == 1 )
+//						neighbor = getNeighbor( di, 1, dj );
+//					else
+//						neighbor = getNeighbor( di, dj, 1 );
+//
+//					if( neighbor ) {
+//						vp1 += weight * f( neighbor );
+//						sump1 += weight;
+//					}
+//					else {
+//						vp1 += weight * v;
+//						sump1 += weight;
+//					}
+//
+//				}
+//			}
+//
+//			if( sump1 > 0 )
+//				vp1 /= sump1;
+//			else
+//				vp1 = v;
 
 		}
 
@@ -1105,50 +1095,172 @@ inline double spatialaggregate::OcTreeNode< CoordType, ValueType >::getFiniteCen
 		}
 		else {
 
-//			vm1 = v;
 
-			double summ1 = 0.0;
-			for( int di = -1; di <= 1; di++ ) {
-				for( int dj = -1; dj <= 1; dj++ ) {
+			vm1 = v;
 
-					spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor = NULL;
-
-					const double weight = (1.f-0.5f*fabsf(di)) * (1.f-0.5f*fabsf(dj));
-
-					if( dim == 0 )
-						neighbor = getNeighbor( -1, di, dj );
-					else if( dim == 1 )
-						neighbor = getNeighbor( di, -1, dj );
-					else
-						neighbor = getNeighbor( di, dj, -1 );
-
-					if( neighbor ) {
-						vm1 += weight * f( neighbor );
-						summ1 += weight;
-					}
-					else {
-						vm1 += weight * v;
-						summ1 += weight;
-					}
-
-				}
-			}
-
-			if( summ1 > 0 )
-				vm1 /= summ1;
-			else
-				vm1 = v;
+//			double summ1 = 0.0;
+//			for( int di = -1; di <= 1; di++ ) {
+//				for( int dj = -1; dj <= 1; dj++ ) {
+//
+//					spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor = NULL;
+//
+//					const double weight = (1.f-0.5f*fabsf(di)) * (1.f-0.5f*fabsf(dj));
+//
+//					if( dim == 0 )
+//						neighbor = getNeighbor( -1, di, dj );
+//					else if( dim == 1 )
+//						neighbor = getNeighbor( di, -1, dj );
+//					else
+//						neighbor = getNeighbor( di, dj, -1 );
+//
+//					if( neighbor ) {
+//						vm1 += weight * f( neighbor );
+//						summ1 += weight;
+//					}
+//					else {
+//						vm1 += weight * v;
+//						summ1 += weight;
+//					}
+//
+//				}
+//			}
+//
+//			if( summ1 > 0 )
+//				vm1 /= summ1;
+//			else
+//				vm1 = v;
 
 		}
 
 		return 0.5 * ( vp1 - vm1 );
 	}
 
+
 	return 0.0;
 
 }
 
 
+template< typename CoordType, typename ValueType >
+inline double spatialaggregate::OcTreeNode< CoordType, ValueType >::getFiniteCentralDifference2( int dim1, int dim2, double (*f)( spatialaggregate::OcTreeNode< CoordType, ValueType >* n ) ) {
+
+	if( dim1 == dim2 ) {
+
+		double v = f( this );
+
+		// select next neighbor in query dimensions
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborm1 = getNeighbor( dim1 == 0 ? -1 : 0, dim1 == 1 ? -1 : 0, dim1 == 2 ? -1 : 0 );
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborp1 = getNeighbor( dim1 == 0 ? 1 : 0, dim1 == 1 ? 1 : 0, dim1 == 2 ? 1 : 0 );
+
+//		double vp1 = 0;
+//		double vm1 = 0;
+		double vp1 = v;
+		double vm1 = v;
+
+		if( neighborm1 )
+			vm1 = f(neighborm1);
+
+		if( neighborp1 )
+			vp1 = f(neighborp1);
+
+		return (vp1 - 2.0 * v + vm1);
+
+	}
+	else {
+
+		double v = f( this );
+
+
+		// select next neighbor in query dimensions
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborm1m1 = getNeighbor( (dim1 == 0 ? -1 : 0) + (dim2 == 0 ? -1 : 0), (dim1 == 1 ? -1 : 0) + (dim2 == 1 ? -1 : 0), (dim1 == 2 ? -1 : 0) + (dim2 == 2 ? -1 : 0) );
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborm1p1 = getNeighbor( (dim1 == 0 ? -1 : 0) + (dim2 == 0 ? +1 : 0), (dim1 == 1 ? -1 : 0) + (dim2 == 1 ? +1 : 0), (dim1 == 2 ? -1 : 0) + (dim2 == 2 ? +1 : 0) );
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborp1m1 = getNeighbor( (dim1 == 0 ? +1 : 0) + (dim2 == 0 ? -1 : 0), (dim1 == 1 ? +1 : 0) + (dim2 == 1 ? -1 : 0), (dim1 == 2 ? +1 : 0) + (dim2 == 2 ? -1 : 0) );
+		spatialaggregate::OcTreeNode< CoordType, ValueType >* neighborp1p1 = getNeighbor( (dim1 == 0 ? +1 : 0) + (dim2 == 0 ? +1 : 0), (dim1 == 1 ? +1 : 0) + (dim2 == 1 ? +1 : 0), (dim1 == 2 ? +1 : 0) + (dim2 == 2 ? +1 : 0) );
+
+		if( neighborm1m1 && neighborm1p1 && neighborp1m1 && neighborp1p1 ) {
+
+	//		double vm1m1 = 0;
+	//		double vm1p1 = 0;
+	//		double vp1m1 = 0;
+	//		double vp1p1 = 0;
+			double vm1m1 = v;
+			double vm1p1 = v;
+			double vp1m1 = v;
+			double vp1p1 = v;
+
+			if( neighborm1m1 )
+				vm1m1 = f(neighborm1m1);
+
+			if( neighborm1p1 )
+				vm1p1 = f(neighborm1p1);
+
+
+			if( neighborp1m1 )
+				vp1m1 = f(neighborp1m1);
+
+			if( neighborp1p1 )
+				vp1p1 = f(neighborp1p1);
+
+
+			return 0.25 * (vp1p1 - vp1m1 - vm1p1 + vm1m1);
+
+		}
+		else {
+
+			// get central difference along either dim1 or dim2, depending on which neighbors exist
+			spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor1m1 = getNeighbor( dim1 == 0 ? -1 : 0, dim1 == 1 ? -1 : 0, dim1 == 2 ? -1 : 0 );
+			spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor1p1 = getNeighbor( dim1 == 0 ? 1 : 0, dim1 == 1 ? 1 : 0, dim1 == 2 ? 1 : 0 );
+			spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor2m1 = getNeighbor( dim2 == 0 ? -1 : 0, dim2 == 1 ? -1 : 0, dim2 == 2 ? -1 : 0 );
+			spatialaggregate::OcTreeNode< CoordType, ValueType >* neighbor2p1 = getNeighbor( dim2 == 0 ? 1 : 0, dim2 == 1 ? 1 : 0, dim2 == 2 ? 1 : 0 );
+
+			if( neighbor1m1 && neighbor1p1 ) {
+
+				double diffm1 = neighbor1m1->getFiniteCentralDifference( dim2, f );
+				double diffp1 = neighbor1p1->getFiniteCentralDifference( dim2, f );
+
+				return 0.5 * (diffp1 - diffm1);
+
+			}
+			else if( neighbor2m1 && neighbor2p1 ) {
+
+				double diffm1 = neighbor2m1->getFiniteCentralDifference( dim1, f );
+				double diffp1 = neighbor2p1->getFiniteCentralDifference( dim1, f );
+
+				return 0.5 * (diffp1 - diffm1);
+
+			}
+			else if( neighbor1m1 || neighbor1p1 ) {
+
+				double diffm1 = 0;
+				if( neighbor1m1 )
+					diffm1 = neighbor1m1->getFiniteCentralDifference( dim2, f );
+
+				double diffp1 = 0;
+				if( neighbor1p1 )
+					diffp1 = neighbor1p1->getFiniteCentralDifference( dim2, f );
+
+				return 0.5 * (diffp1 - diffm1);
+			}
+			else {
+
+				double diffm1 = 0;
+				if( neighbor2m1 )
+					diffm1 = neighbor2m1->getFiniteCentralDifference( dim1, f );
+
+				double diffp1 = 0;
+				if( neighbor2p1 )
+					diffp1 = neighbor2p1->getFiniteCentralDifference( dim1, f );
+
+				return 0.5 * (diffp1 - diffm1);
+			}
+
+		}
+
+	}
+
+	return 0.0;
+
+}
 
 template< typename CoordType, typename ValueType >
 spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< CoordType, 4, 1 >& center, CoordType minimumVolumeSize, CoordType maxDistance, boost::shared_ptr< spatialaggregate::OcTreeNodeAllocator< CoordType, ValueType > > allocator ) {
