@@ -550,6 +550,7 @@ namespace spatialaggregate {
 		uint32_t neighbor_octant_[8][27];
 		uint32_t parent_neighbor_[8][27];
 		double scale_depth_table_[65536];
+		uint32_t numMaxResolutionNodes_[MAX_REPRESENTABLE_DEPTH+1];
 		
 		uint32_t neighborhood_p1_map_[3];
 		uint32_t neighborhood_m1_map_[3];
