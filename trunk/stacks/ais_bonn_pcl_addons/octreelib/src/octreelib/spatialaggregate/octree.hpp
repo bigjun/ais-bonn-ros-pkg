@@ -1310,6 +1310,7 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 		minmasks_[i] = 0xFFFFFFFFLL << (MAX_REPRESENTABLE_DEPTH - i);
 		maxmasks_[i] = (0x1LL << (MAX_REPRESENTABLE_DEPTH - i)) - 1LL;
 
+		numMaxResolutionNodes_[i] = round( pow( 8.0, (double)(max_depth_ - i) ) );
 	}
 
 	log_minimum_volume_size_ = log2( minimumVolumeSize );
@@ -1322,6 +1323,7 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 	neighborhood_m1_map_[0] = 4;
 	neighborhood_m1_map_[1] = 10;
 	neighborhood_m1_map_[2] = 12;
+
 
 
 //	// precompute scale-depth table
