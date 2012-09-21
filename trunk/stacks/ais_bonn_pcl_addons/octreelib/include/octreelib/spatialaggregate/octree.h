@@ -567,7 +567,7 @@ namespace spatialaggregate {
 };
 
 
-#include <octreelib/spatialaggregate/octree.hpp>
+#include <octreelib/spatialaggregate/impl/octree.hpp>
 
 
 #endif //__SPATIALAGGREGATE_OCTREE_H__

@@ -141,7 +141,7 @@ namespace algorithm {
 
 };
 
-#include <octreelib/algorithm/downsample.hpp>
+#include <octreelib/algorithm/impl/downsample.hpp>
 
 #endif //__DOWNSAMPLE_OCTREE_H__
 
