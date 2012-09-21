@@ -125,7 +125,7 @@ namespace feature
 	
 }; // namespace
 
-#include <octreelib/feature/normalestimation.hpp>
+#include <octreelib/feature/impl/normalestimation.hpp>
 
 #endif /* NORMAL_ESTIMATION_OCTREE_H_ */
 
