@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-project(octreelib)
+project(OctreeLib)
 
 
 # ---[ Release/Debug specific flags
@@ -53,4 +53,33 @@ set(SOURCES
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
+
+# configure install target
+set(CMAKE_INSTALL_PREFIX "/usr/local")
+
+install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/algorithm/downsample.h"
+	DESTINATION include/octreelib/algorithm)
+install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/algorithm/impl/downsample.hpp"
+        DESTINATION include/octreelib/algorithm/impl)
+
+install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/feature/normalestimation.h"
+        DESTINATION include/octreelib/feature)
+install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/feature/impl/normalestimation.hpp"
+        DESTINATION include/octreelib/feature/impl)
+
+install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/spatialaggregate/octree.h"
+        DESTINATION include/octreelib/spatialaggregate)
+install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/spatialaggregate/impl/octree.hpp"
+        DESTINATION include/octreelib/spatialaggregate/impl)
+
+
+
+# configure uninstall target
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
