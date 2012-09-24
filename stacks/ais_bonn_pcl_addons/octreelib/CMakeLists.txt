@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-project(OctreeLib)
-
+project(OCTREELIB)
 
 # ---[ Release/Debug specific flags
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
@@ -51,7 +50,8 @@ set(SOURCES
         src/octreelib/feature/normalestimation.cpp
 )
 
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
+add_library(octreelib SHARED ${SOURCES})
+
 
 
 # configure install target
@@ -72,6 +72,11 @@ install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/spatialaggregate/octree.h
 install(FILES "${PROJECT_SOURCE_DIR}/include/octreelib/spatialaggregate/impl/octree.hpp"
         DESTINATION include/octreelib/spatialaggregate/impl)
 
+install(FILES "${LIBRARY_OUTPUT_PATH}/liboctreelib.so"
+	DESTINATION lib)
+
+install(FILES "${PROJECT_SOURCE_DIR}/cmake/Modules/FindOctreeLib.cmake"
+	DESTINATION /usr/share/cmake-2.8/Modules)
 
 
 # configure uninstall target
