@@ -533,10 +533,6 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getCenterKey( 
 template< typename CoordType, typename ValueType >
 inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::addPoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth ) {
 
-//	Eigen::Matrix< CoordType, 4, 1 > p = position.getPosition( tree_ );
-//
-//	std::cout << p << "\n";
-
 	// traverse from root until we found an empty leaf node
 	spatialaggregate::OcTreeNode< CoordType, ValueType >* parentNode = parent_;
 	unsigned int octant = 0;
@@ -617,6 +613,83 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 }
 
 
+
+//template< typename CoordType, typename ValueType >
+//inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::addPoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth ) {
+//
+//	// traverse from root until we found an empty leaf node
+//	spatialaggregate::OcTreeNode< CoordType, ValueType >* parentNode = parent_;
+//	unsigned int octant = 0;
+//	spatialaggregate::OcTreeNode< CoordType, ValueType >* currNode = this;
+//
+//	while( currNode ) {
+//
+//		if( currNode->depth_ == maxDepth ) {
+//			// reached max depth
+//			currNode->value_ += value;
+//			return currNode;
+//		}
+//
+//		if( currNode->type_ == OCTREE_LEAF_NODE )
+//			break; // reached a leaf, stop searching
+//
+//		parentNode = currNode;
+//		octant = currNode->getOctant( position );
+//		currNode = currNode->children_[ octant ];
+//
+//	}
+//
+//
+//	if( currNode == NULL ) {
+//
+//		// simply add a new leaf node in the parent's octant
+//		spatialaggregate::OcTreeNode< CoordType, ValueType >* leaf = tree_->allocator_->allocateNode();
+//		leaf->initialize( OCTREE_LEAF_NODE, position, value, parentNode->depth_ + 1, parentNode, tree_ );
+//
+//		parentNode->value_ = (ValueType)0;
+//		parentNode->type_ = OCTREE_BRANCHING_NODE;
+//		parentNode->children_[octant] = leaf;
+//
+//		return leaf;
+//
+//	}
+//	else {
+//
+//		if( currNode->type_ == OCTREE_LEAF_NODE ) {
+//
+//			// branch at parent's octant..
+//			spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf = currNode;
+//
+//			if( oldLeaf->pos_key_ == position ) {
+//				oldLeaf->value_ += value;
+//				return oldLeaf;
+//			}
+//
+//			spatialaggregate::OcTreeNode< CoordType, ValueType >* branch = tree_->allocator_->allocateNode();
+//			branch->initialize( oldLeaf );
+//			branch->type_ = OCTREE_BRANCHING_NODE;
+//
+//			assert( parentNode->children_[octant] == oldLeaf );
+//
+//			parentNode->children_[octant] = branch;
+//
+//			// link old leaf to branching node
+//			unsigned int oldLeafOctant = branch->getOctant( oldLeaf->pos_key_ );
+//			branch->children_[ oldLeafOctant ] = oldLeaf;
+//			oldLeaf->initialize( OCTREE_LEAF_NODE, oldLeaf->pos_key_, oldLeaf->value_, branch->depth_ + 1, branch, tree_ );
+//			branch->value_ = (ValueType)0;
+//
+//			return branch->addPoint( position, value, maxDepth ); // this could return some older leaf
+//
+//		}
+//
+//	}
+//
+//	assert( false );
+//
+//	return NULL;
+//
+//}
 
 
 template< typename CoordType, typename ValueType >
