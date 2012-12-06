@@ -44,6 +44,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <Eigen/Core>
 #include <Eigen/Eigen>
@@ -105,6 +106,26 @@ namespace spatialaggregate {
 
 		}
 
+		T* concurrent_allocate() {
+
+			boost::lock_guard<boost::mutex> lock(mutex_);
+
+			T* retval = &((*pool_iterator_)[curr_idx_]);
+
+			curr_idx_++;
+			if( curr_idx_ >= block_size_ ) {
+				PoolIterator nit = pool_iterator_;
+				nit++;
+				if( nit == pool_.end() )
+					pool_.push_back( std::vector< T, Eigen::aligned_allocator< T > >( block_size_ ) );
+				pool_iterator_++;
+				curr_idx_ = 0;
+			}
+
+			return retval;
+
+		}
+
 		void reset() {
 			pool_iterator_ = pool_.begin();
 			curr_idx_ = 0;
@@ -114,6 +135,8 @@ namespace spatialaggregate {
 		int block_size_;
 		int curr_idx_;
 		PoolIterator pool_iterator_;
+
+		boost::mutex mutex_;
 
 
 	};
@@ -273,6 +296,7 @@ namespace spatialaggregate {
 		inline void getCenterKey( OcTreeKey< CoordType, ValueType >& center_key ) const;
 
 		inline OcTreeNode< CoordType, ValueType >* addPoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth );
+//		inline OcTreeNode< CoordType, ValueType >* integratePoint( const OcTreeKey< CoordType, ValueType >& position, const ValueType& value, int maxDepth );
 		
 		inline void getAllLeaves( std::list< OcTreeNode< CoordType, ValueType >* >& nodes );
 
@@ -472,6 +496,14 @@ namespace spatialaggregate {
 			return root_->addPoint( getKey( position(0), position(1), position(2) ), value, maxDepth );
 		}
 
+		inline OcTreeNode< CoordType, ValueType >* integratePoint( const CoordType& x, const CoordType& y, const CoordType& z, const ValueType& value, int maxDepth ) {
+			return root_->integratePoint( getKey( x, y, z ), value, maxDepth );
+		}
+
+		inline OcTreeNode< CoordType, ValueType >* integratePoint( const Eigen::Matrix< CoordType, 4, 1 >& position, const ValueType& value, int maxDepth ) {
+			return root_->integratePoint( getKey( position(0), position(1), position(2) ), value, maxDepth );
+		}
+
 		inline OcTreeKey< CoordType, ValueType > getKey( const CoordType& x, const CoordType& y, const CoordType& z ) {
 			return OcTreeKey< CoordType, ValueType >( x, y, z, this );
 		}
@@ -481,7 +513,6 @@ namespace spatialaggregate {
 		}
 		
 		inline double depthForVolumeSize( CoordType volumeSize ) {
-//			const double depth = (double)max_depth_ - (log( volumeSize ) - log_minimum_volume_size_) * log2_inv_;
 			const double depth = (double)max_depth_ - (log2f( volumeSize ) - log_minimum_volume_size_);
 			if( depth < 0.0 )
 				return 0.0;
@@ -490,21 +521,6 @@ namespace spatialaggregate {
 			else
 				return depth;
 		}
-
-//		inline double depthForVolumeSize( CoordType volumeSize ) {
-//
-//			if( volumeSize < minimum_volume_size_ )
-//				return max_depth_;
-//
-//			const CoordType scale = volumeSize * inv_minimum_volume_size_;
-//
-//			if( scale > 65535 )
-//				return 0.0;
-//
-
-		//			return scale_depth_table_[ (int)scale ];
-//
-//		}
 
 		inline CoordType volumeSizeForDepth( int depth ) {
 			return resolutions_[depth];
