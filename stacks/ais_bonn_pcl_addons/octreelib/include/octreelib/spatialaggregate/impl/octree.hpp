@@ -213,7 +213,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::sweepUp( void*
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllLeaves( std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* >& points ) {
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		points.push_back( this );
 
@@ -237,7 +237,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllLeaves( 
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllLeavesInVolume( std::list< spatialaggregate::OcTreeNode< CoordType, ValueType >* >& points, const spatialaggregate::OcTreeKey< CoordType, ValueType >& minPosition, const spatialaggregate::OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth ) {
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		// check if point in leaf is within region
 		if( inRegion( minPosition, maxPosition ) ) {
@@ -272,7 +272,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 	if( depth_ > maxDepth )
 		return;
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		if( !higherDepthLeaves && depth_ != maxDepth )
 			return;
@@ -329,7 +329,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 	if( depth_ > maxDepth )
 		return;
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		if( !higherDepthLeaves && depth_ != maxDepth )
 			return;
@@ -395,7 +395,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( 
 template< typename CoordType, typename ValueType >
 inline ValueType spatialaggregate::OcTreeNode< CoordType, ValueType >::getValueInVolume( const spatialaggregate::OcTreeKey< CoordType, ValueType >& minPosition, const spatialaggregate::OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth ) {
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		if( inRegion( minPosition, maxPosition ) )
 			return value_;
@@ -434,7 +434,7 @@ inline ValueType spatialaggregate::OcTreeNode< CoordType, ValueType >::getValueI
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::applyOperatorInVolume( ValueType& value, void* data, void (*f)( ValueType& v, spatialaggregate::OcTreeNode< CoordType, ValueType >* current, void* data ), const spatialaggregate::OcTreeKey< CoordType, ValueType >& minPosition, const spatialaggregate::OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth ) {
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		if( inRegion( minPosition, maxPosition ) ) {
 			f( value, this, data );
@@ -475,7 +475,7 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::applyOperatorI
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::sweepDown( void* data, void (*f)( spatialaggregate::OcTreeNode< CoordType, ValueType >* current, spatialaggregate::OcTreeNode< CoordType, ValueType >* next, void* data ) ) {
 
-	if( type_ == OCTREE_LEAF_NODE ) {
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 		f( this, NULL, data );
 
@@ -543,10 +543,12 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		if( currNode->depth_ == maxDepth ) {
 			// reached max depth
 			currNode->value_ += value;
+			if( currNode->type_ == OCTREE_LEAF_NODE )
+				currNode->type_ = OCTREE_MAX_DEPTH_LEAF_NODE;
 			return currNode;
 		}
 
-		if( currNode->type_ == OCTREE_LEAF_NODE )
+		if( currNode->type_ == OCTREE_LEAF_NODE || currNode->type_ == OCTREE_MAX_DEPTH_LEAF_NODE )
 			break; // reached a leaf, stop searching
 
 		parentNode = currNode;
@@ -575,7 +577,7 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 	}
 	else {
 
-		if( currNode->type_ == OCTREE_LEAF_NODE ) {
+		if( currNode->type_ == OCTREE_LEAF_NODE || currNode->type_ == OCTREE_MAX_DEPTH_LEAF_NODE ) {
 
 			// branch at parent's octant..
 			spatialaggregate::OcTreeNode< CoordType, ValueType >* oldLeaf = currNode;
@@ -593,10 +595,12 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 			parentNode->children_[octant] = branch;
 
-			// link old leaf to branching node
-			unsigned int oldLeafOctant = branch->getOctant( oldLeaf->pos_key_ );
-			branch->children_[ oldLeafOctant ] = oldLeaf;
-			oldLeaf->initialize( OCTREE_LEAF_NODE, oldLeaf->pos_key_, oldLeaf->value_, branch->depth_ + 1, branch, tree_ );
+			if( currNode->type_ == OCTREE_LEAF_NODE ) {
+				// link old leaf to branching node
+				unsigned int oldLeafOctant = branch->getOctant( oldLeaf->pos_key_ );
+				branch->children_[ oldLeafOctant ] = oldLeaf;
+				oldLeaf->initialize( OCTREE_LEAF_NODE, oldLeaf->pos_key_, oldLeaf->value_, branch->depth_ + 1, branch, tree_ );
+			}
 
 //			branch->finishBranch();
 
@@ -694,7 +698,7 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 template< typename CoordType, typename ValueType >
 inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::OcTreeNode< CoordType, ValueType >::findRepresentative( const OcTreeKey< CoordType, ValueType >& position, int maxDepth ) {
-	if( type_ == OCTREE_LEAF_NODE )
+	if( type_ == OCTREE_LEAF_NODE || type_ == OCTREE_MAX_DEPTH_LEAF_NODE )
 		return this;
 	else {
 
