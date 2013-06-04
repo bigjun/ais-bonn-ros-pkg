@@ -64,6 +64,7 @@ namespace spatialaggregate {
 	
 	enum OcTreeNodeType {
 		OCTREE_LEAF_NODE,
+		OCTREE_MAX_DEPTH_LEAF_NODE,
 		OCTREE_BRANCHING_NODE,
 		NUM_OCTREE_NODE_TYPES,
 	};
