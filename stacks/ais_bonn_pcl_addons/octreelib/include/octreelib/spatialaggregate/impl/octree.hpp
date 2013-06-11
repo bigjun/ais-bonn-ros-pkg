@@ -545,6 +545,8 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 			currNode->value_ += value;
 			if( currNode->type_ == OCTREE_LEAF_NODE )
 				currNode->type_ = OCTREE_MAX_DEPTH_LEAF_NODE;
+			if( currNode->type_ == OCTREE_BRANCHING_NODE )
+				currNode->type_ = OCTREE_MAX_DEPTH_BRANCHING_NODE;
 			return currNode;
 		}
 
@@ -570,6 +572,9 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 		parentNode->type_ = OCTREE_BRANCHING_NODE;
 		parentNode->children_[octant] = leaf;
 
+		if( leaf->depth_ == maxDepth )
+			leaf->type_ = OCTREE_MAX_DEPTH_LEAF_NODE;
+
 //		parentNode->finishBranch();
 
 		return leaf;
@@ -589,7 +594,10 @@ inline spatialaggregate::OcTreeNode< CoordType, ValueType >* spatialaggregate::O
 
 			spatialaggregate::OcTreeNode< CoordType, ValueType >* branch = tree_->allocator_->allocateNode();
 			branch->initialize( oldLeaf );
-			branch->type_ = OCTREE_BRANCHING_NODE;
+			if( currNode->type_ == OCTREE_MAX_DEPTH_LEAF_NODE )
+				branch->type_ = OCTREE_MAX_DEPTH_BRANCHING_NODE;
+			else
+				branch->type_ = OCTREE_BRANCHING_NODE;
 
 			assert( parentNode->children_[octant] == oldLeaf );
 
