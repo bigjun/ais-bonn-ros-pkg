@@ -73,7 +73,7 @@ namespace algorithm {
 
 			spatialaggregate::OcTreeNode< CoordType, ValueType >* node = openList.front();
 
-			if( node->type_ == spatialaggregate::OCTREE_BRANCHING_NODE ) {
+			if( node->type_ == spatialaggregate::OCTREE_BRANCHING_NODE || node->type_ == spatialaggregate::OCTREE_MAX_DEPTH_BRANCHING_NODE ) {
 
 				samplingMap[ node->depth_ ].push_back( node );
 
