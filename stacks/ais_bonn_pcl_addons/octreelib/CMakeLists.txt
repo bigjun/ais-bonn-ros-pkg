@@ -35,7 +35,7 @@ add_definitions(-DEIGEN_USE_NEW_STDVECTOR
 
 
 # PCL (required)
-find_package(PCL 1.7 REQUIRED COMPONENTS common)
+find_package(PCL 1.5 REQUIRED COMPONENTS common)
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})

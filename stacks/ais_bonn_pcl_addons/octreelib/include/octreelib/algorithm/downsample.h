@@ -62,7 +62,7 @@ namespace algorithm {
 
 	// downToDepth: include a leaf at depth in lists from 0 to depth
 	template< typename CoordType, typename ValueType >
-	OcTreeSamplingMap< CoordType, ValueType > downsampleOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0 ) {
+	OcTreeSamplingMap< CoordType, ValueType > downsampleOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0, bool branchMaxDepthNodes = true ) {
 
 		algorithm::OcTreeSamplingMap< CoordType, ValueType > samplingMap;
 
@@ -73,7 +73,7 @@ namespace algorithm {
 
 			spatialaggregate::OcTreeNode< CoordType, ValueType >* node = openList.front();
 
-			if( node->type_ == spatialaggregate::OCTREE_BRANCHING_NODE || node->type_ == spatialaggregate::OCTREE_MAX_DEPTH_BRANCHING_NODE ) {
+			if( node->type_ == spatialaggregate::OCTREE_BRANCHING_NODE || ( branchMaxDepthNodes && node->type_ == spatialaggregate::OCTREE_MAX_DEPTH_BRANCHING_NODE ) ) {
 
 				samplingMap[ node->depth_ ].push_back( node );
 
@@ -118,12 +118,12 @@ namespace algorithm {
 
 	// downToDepth: include a leaf at depth in lists from 0 to depth
 	template< typename CoordType, typename ValueType >
-	OcTreeSamplingVectorMap< CoordType, ValueType > downsampleVectorOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0 ) {
+	OcTreeSamplingVectorMap< CoordType, ValueType > downsampleVectorOcTree( const spatialaggregate::OcTree< CoordType, ValueType >& tree, bool downToMaxDepth = false, unsigned int maxDepth = 0, bool branchMaxDepthNodes = true ) {
 
 		typedef OcTreeSamplingMap< CoordType, ValueType > SamplingMap;
 		//typedef SamplingMap::iterator samplingmap_iterator;
 
-		SamplingMap samplingMap = downsampleOcTree( tree, downToMaxDepth, maxDepth );
+		SamplingMap samplingMap = downsampleOcTree( tree, downToMaxDepth, maxDepth, branchMaxDepthNodes );
 		OcTreeSamplingVectorMap< CoordType, ValueType > samplingVectorMap;
 
 		typename SamplingMap::iterator it = samplingMap.begin();
