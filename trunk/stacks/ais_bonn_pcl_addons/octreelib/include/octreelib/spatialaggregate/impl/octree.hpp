@@ -363,6 +363,52 @@ inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInV
 }
 
 
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInVolumeUpToDepth( std::list< OcTreeNode< CoordType, ValueType >* >& points, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth ) {
+
+	if( depth_ > maxDepth )
+		return;
+
+	if( inRegion( minPosition, maxPosition ) )
+		points.push_back( this );
+
+	// for all children
+	// - if regions overlap: call function for the child
+	for( unsigned int i = 0; i < 8; i++ ) {
+		if( !children_[i] )
+			continue;
+
+		if( children_[i]->overlap( minPosition, maxPosition ) )
+			children_[i]->getAllNodesInVolumeUpToDepth( points, minPosition, maxPosition, maxDepth );
+	}
+
+}
+
+
+template< typename CoordType, typename ValueType >
+inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getAllNodesInVolumeUpToDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& points, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth ) {
+
+	if( depth_ > maxDepth )
+		return;
+
+	if( inRegion( minPosition, maxPosition ) )
+		points.push_back( this );
+
+	// for all children
+	// - if regions overlap: call function for the child
+	for( unsigned int i = 0; i < 8; i++ ) {
+		if( !children_[i] )
+			continue;
+
+		if( children_[i]->overlap( minPosition, maxPosition ) )
+			children_[i]->getAllNodesInVolumeUpToDepth( points, minPosition, maxPosition, maxDepth );
+	}
+
+}
+
+
+
 template< typename CoordType, typename ValueType >
 inline void spatialaggregate::OcTreeNode< CoordType, ValueType >::getNeighbors( std::list< OcTreeNode< CoordType, ValueType >* >& neighbors ) {
 
@@ -1382,7 +1428,7 @@ spatialaggregate::OcTree< CoordType, ValueType >::OcTree( const Eigen::Matrix< C
 	minimum_volume_size_ = minimumVolumeSize;
 	inv_minimum_volume_size_ = 1.0 / minimum_volume_size_;
 
-	for( int i = 0; i <= max_depth_; i++ ) {
+	for( int i = 0; i <= MAX_REPRESENTABLE_DEPTH; i++ ) {
 		resolutions_[i] = minimum_volume_size_ * pow( 2.0, max_depth_ - i );
 		inv_resolutions_[i] = 1.0 / resolutions_[i];
 		minResolutions_[i] = minimum_volume_size_ * pow( 2.0, (double)(max_depth_ - i) - 0.5 );

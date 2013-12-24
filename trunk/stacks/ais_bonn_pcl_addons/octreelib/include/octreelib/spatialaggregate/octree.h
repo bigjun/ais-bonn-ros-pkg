@@ -304,15 +304,27 @@ namespace spatialaggregate {
 
 		inline void getAllLeavesInVolume( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 
-		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool lowerDepthLeaves );
-		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
-			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, lowerDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool higherDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool higherDepthLeaves ) {
+			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, higherDepthLeaves );
 		}
 
-		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool lowerDepthLeaves );
-		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
-			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, lowerDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth, bool higherDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool higherDepthLeaves ) {
+			getAllNodesInVolumeOnDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth, higherDepthLeaves );
 		}
+
+
+		inline void getAllNodesInVolumeUpToDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth );
+		inline void getAllNodesInVolumeUpToDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth ) {
+			getAllNodesInVolumeUpToDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth );
+		}
+
+		inline void getAllNodesInVolumeUpToDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int depth );
+		inline void getAllNodesInVolumeUpToDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth ) {
+			getAllNodesInVolumeUpToDepth( nodes, tree_->getKey( minPosition ), tree_->getKey( maxPosition ), depth );
+		}
+
 
 		inline ValueType getValueInVolume( const OcTreeKey< CoordType, ValueType >& minPosition, const OcTreeKey< CoordType, ValueType >& maxPosition, int maxDepth );
 		
@@ -536,13 +548,23 @@ namespace spatialaggregate {
 			return maxResolutions_[depth];
 		}
 
-		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
-			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, lowerDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool higherDepthLeaves ) {
+			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, higherDepthLeaves );
 		}
 
-		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool lowerDepthLeaves ) {
-			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, lowerDepthLeaves );
+		inline void getAllNodesInVolumeOnDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth, bool higherDepthLeaves ) {
+			root_->getAllNodesInVolumeOnDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth, higherDepthLeaves );
 		}
+
+
+		inline void getAllNodesInVolumeUpToDepth( std::list< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth ) {
+			root_->getAllNodesInVolumeUpToDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth );
+		}
+
+		inline void getAllNodesInVolumeUpToDepth( std::vector< OcTreeNode< CoordType, ValueType >* >& nodes, const Eigen::Matrix< CoordType, 4, 1 >& minPosition, const Eigen::Matrix< CoordType, 4, 1 >& maxPosition, int depth ) {
+			root_->getAllNodesInVolumeUpToDepth( nodes, getKey( minPosition ), getKey( maxPosition ), depth );
+		}
+
 
 		inline OcTreeNode< CoordType, ValueType >* findRepresentative( const Eigen::Matrix< CoordType, 4, 1 >& position, int maxDepth ) {
 			return root_->findRepresentative( getKey( position ), maxDepth );
